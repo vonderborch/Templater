@@ -53,7 +53,7 @@ namespace Templater.Core
 
         public void SaveFile(string fileName)
         {
-            var contents = JsonConvert.SerializeObject(this);
+            var contents = JsonConvert.SerializeObject(this, Formatting.Indented);
             Directory.CreateDirectory(Path.GetDirectoryName(fileName));
             File.WriteAllText(fileName, contents);
         }

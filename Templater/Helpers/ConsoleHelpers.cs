@@ -17,7 +17,7 @@ namespace Templater.Helpers
             return string.IsNullOrEmpty(input) ? defaultReturn : input;
         }
 
-        public static bool GetYesNo(string message, bool defaultYes)
+        public static bool GetYesNo(string message, bool defaultYes = true)
         {
             while (true)
             {

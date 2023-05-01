@@ -6,6 +6,8 @@
 
         public static string TemplaterSettingsFileName = "settings.json";
 
+        public static string TemplaterTemplatesInfoFileName = "template_info.json";
+
         public static string TemplaterTemplatesDirectory = "Templates";
 
         public static string AppName = "Templater";

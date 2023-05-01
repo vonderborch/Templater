@@ -1,7 +1,7 @@
 ﻿using Octokit;
 using System.Diagnostics;
 
-namespace Templater.Core.Objects
+namespace Templater.Core.Repositories
 {
     [DebuggerDisplay("{Info}")]
     public class GitRepoContents

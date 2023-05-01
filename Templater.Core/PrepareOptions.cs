@@ -8,5 +8,8 @@ namespace Templater.Core
 {
     public class PrepareOptions
     {
+        public string Directory;
+        public string OutputDirectory;
+        public Template.Template TemplateSettings;
     }
 }

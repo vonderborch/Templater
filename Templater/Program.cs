@@ -7,6 +7,8 @@ namespace Templater
     {
         static void Main(string[] args)
         {
+            args = new string[] { "prepare", "-d", @"C:\Users\ricky\Dropbox\Projects\Templater-Templates\TEMPLATES_BASE\Velentr.BASE" };
+
             // Ask for configuration if it doesn't exist
             if (!Core.Templater.Instance.ValidateConfiguration())
             {

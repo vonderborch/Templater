@@ -1,11 +1,13 @@
 ﻿using Octokit;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading.Tasks;
-using Templater.Core.Objects;
+using Templater.Core.Implementations.dotsln;
+using Templater.Core.Repositories;
 
 namespace Templater.Core
 {
@@ -20,14 +22,21 @@ namespace Templater.Core
 
         public static Templater Instance { get { return lazy.Value; } }
 
+        public List<Template.Template> Templates = new();
+
         private Templater()
         {
             _settings = null;
         }
 
-        public string SettingsFileName => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), Constants.TemplaterDirectory, Constants.TemplaterSettingsFileName);
+        public string SettingsFileName => Path.Combine(CoreDirectory, Constants.TemplaterSettingsFileName);
 
-        public string TemplatesDirectory => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), Constants.TemplaterDirectory, Constants.TemplaterTemplatesDirectory);
+        public string TemplatesDirectory => Path.Combine(CoreDirectory, Constants.TemplaterTemplatesDirectory);
+
+        public string TemplatesInfoFileName => Path.Combine(CoreDirectory, Constants.TemplaterTemplatesInfoFileName);
+
+        public string CoreDirectory => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+, Constants.TemplaterDirectory);
 
         public Settings Settings
         {
@@ -61,6 +70,17 @@ namespace Templater.Core
             return File.Exists(SettingsFileName);
         }
 
+        public string Prepare(PrepareOptions options, string type)
+        {
+            switch (type.ToLowerInvariant())
+            {
+                case "dotsln":
+                    return new DotSlnTemplater().Prepare(options);
+                default:
+                    throw new NotImplementedException($"Type {type} not implemented!");
+            }
+        }
+
         public void UpdateTemplates()
         {
             // Get all templates from all repositories
@@ -76,9 +96,11 @@ namespace Templater.Core
             // compare the two lists to see what needs to be updated
 
             // download the new/updated templates
+
+            // Load the templates
         }
 
-        public List<TemplateInfo> GetTemplateListForRepository(string repository)
+        public List<Repositories.TemplateInfo> GetTemplateListForRepository(string repository)
         {
             var splitName = repository.Split('/');
             var owner = splitName[splitName.Length - 2];
@@ -91,9 +113,9 @@ namespace Templater.Core
             return templates;
         }
 
-        public List<TemplateInfo> GetTemplateInfo(string repo, List<GitRepoContents> contents)
+        public List<Repositories.TemplateInfo> GetTemplateInfo(string repo, List<GitRepoContents> contents)
         {
-            var output = new List<TemplateInfo>();
+            var output = new List<Repositories.TemplateInfo>();
 
             for (int i = 0; i < contents.Count; i++)
             {
@@ -104,7 +126,7 @@ namespace Templater.Core
                 }
                 else if (content.Info.Name.EndsWith(Constants.TemplateFileType))
                 {
-                    var templateInfo = new TemplateInfo(content.Info, repo);
+                    var templateInfo = new Repositories.TemplateInfo(content.Info, repo);
                     output.Add(templateInfo);
                 }
             }

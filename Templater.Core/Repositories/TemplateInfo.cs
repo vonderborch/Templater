@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Templater.Core.Objects
+namespace Templater.Core.Repositories
 {
     [DebuggerDisplay("{Name}")]
     public class TemplateInfo
