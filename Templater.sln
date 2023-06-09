@@ -7,6 +7,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Templater", "Templater\Temp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Templater.Core", "Templater.Core\Templater.Core.csproj", "{5CCEAFCB-A901-44BA-A887-EE714D7308DE}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionFiles", "SolutionFiles", "{02FA220F-413E-4AD8-BEDC-2700DD09F443}"
+	ProjectSection(SolutionItems) = preProject
+		index.md = index.md
+		LICENSE = LICENSE
+		README.md = README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
