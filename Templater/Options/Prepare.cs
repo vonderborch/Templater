@@ -19,7 +19,7 @@ namespace Templater.Options
         [Option('s', "skip-cleaning", Required = false, Default = false, HelpText = "If flag is provided, the working directory won't be deleted at the end of the prepare process.")]
         public bool SkipCleaning { get; set; }
 
-        [Option('i', "what-if", Required = false, Default = false, HelpText = "If flag is provided, the program will not be prepared, but the user will be guided through all settings.")]
+        [Option('i', "what-if", Required = false, Default = false, HelpText = "If flag is provided, the template will not be prepared, but the user will be guided through all settings.")]
         public bool WhatIf { get; set; }
 
         /// <summary>
@@ -91,7 +91,7 @@ namespace Templater.Options
             File.WriteAllText(templateInfoFileName, saveFileContents);
 
             // try to prepare the solution
-            if (!WhatIf)
+            if (!options.WhatIf)
             {
                 Console.WriteLine($"Preparing solution {prepareOptions.Directory} as {options.SolutionType}...");
                 var result = Core.Templater.Instance.Prepare(prepareOptions, options.SolutionType);
@@ -101,13 +101,14 @@ namespace Templater.Options
             // Otherwise, the user will be told that their settings have been saved and the project not prepared
             else
             {
-                Console.WriteLine($"Project not prepared, but configuration settings saved: {templateInfoFileName}");
+                Console.WriteLine($"Template not prepared, but configuration settings saved: {templateInfoFileName}");
                 return "Success";
             }
         }
 
         public Templater.Core.Template.Template SetTemplateOptions(Templater.Core.Template.Template template)
         {
+            // if we have existing config, ask if it is fine...
             if (template != null)
             {
                 var firstSettings = JsonConvert.SerializeObject(template, Formatting.Indented);

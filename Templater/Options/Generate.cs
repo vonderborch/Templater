@@ -1,10 +1,28 @@
 ﻿using CommandLine;
+using Newtonsoft.Json;
+using Octokit;
+using Templater.Core;
+using Templater.Core.Solution;
+using Templater.Core.Template;
+using Templater.Helpers;
 
 namespace Templater.Options
 {
     [Verb("generate", HelpText = "Generate a project from a template")]
     internal class Generate : AbstractOption
     {
+        [Option('t', "template", Required = true, HelpText = "The template to use")]
+        public string Template { get; set; }
+
+        [Option('o', "output-directory", Required = true, HelpText = "The output directory for the new solution")]
+        public string OutputDirectory { get; set; }
+
+        [Option('c', "solution-config", Required = false, HelpText = "The specific solution config file to use.")]
+        public string SolutionConfig { get; set; } = "";
+
+        [Option('i', "what-if", Required = false, Default = false, HelpText = "If flag is provided, the solution will not be generated, but the user will be guided through all settings.")]
+        public bool WhatIf { get; set; }
+
         /// <summary>
         /// Executes solution generation with the specified options.
         /// </summary>
@@ -15,7 +33,118 @@ namespace Templater.Options
         /// <exception cref="System.NotImplementedException"></exception>
         public override string Execute(AbstractOption option)
         {
-            throw new System.NotImplementedException();
+            Console.WriteLine("Validating selected template...");
+            var options = (Generate)option;
+
+            // validate and get the selected template
+            Core.Templater.Instance.RefreshLocalTemplatesList();
+            var exists = Core.Templater.Instance.TemplatesMap.TryGetValue(options.Template, out var template);
+
+            if (!exists)
+            {
+                throw new Exception($"Template '{options.Template}' is not a valid template!");
+            }
+
+            Console.WriteLine("Gathering solution configuration...");
+
+            // determine if we need to load an existing config file...
+            string solutionConfig = "";
+            var cleanupSolutionConfigFile = true;
+            if (!string.IsNullOrEmpty(options.SolutionConfig))
+            {
+                solutionConfig = options.SolutionConfig;
+                cleanupSolutionConfigFile = false;
+            }
+            else
+            {
+                solutionConfig = Core.Templater.Instance.TemplaterSolutionConfigurationFile;
+            }
+
+            // load or initialize
+            var generateOptions = new GenerateOptions() {
+                SolutionConfigFile = solutionConfig,
+                CleanSolutionConfigFile = cleanupSolutionConfigFile,
+                Directory = options.OutputDirectory,
+                SolutionSettings = null
+            };
+
+            if (File.Exists(solutionConfig))
+            {
+                Console.WriteLine($"Loading solution config file: {solutionConfig}");
+                generateOptions.SolutionSettings = JsonConvert.DeserializeObject<SolutionSettings>(solutionConfig);
+            }
+
+            // Display settings and ask for confirmation
+            generateOptions.SolutionSettings = SetSolutionConfiguration(generateOptions.SolutionSettings);
+
+            // Save the solution config for later use or documentation if needed
+            var saveFileContents = JsonConvert.SerializeObject(generateOptions.SolutionSettings, Formatting.Indented);
+            File.WriteAllText(generateOptions.SolutionConfigFile, saveFileContents);
+
+            if (!options.WhatIf)
+            {
+                // generate solution...
+
+                return "Success";
+            }
+            else
+            {
+                // done!
+                Console.WriteLine($"Solution not generated, but configuration settings saved: {generateOptions.SolutionConfigFile}");
+
+                return "Success";
+            }
+        }
+
+        private SolutionSettings SetSolutionConfiguration(SolutionSettings solutionSettings)
+        {
+            // if we have existing config, ask if it is fine...
+            if (solutionSettings != null)
+            {
+                var firstSettings = JsonConvert.SerializeObject(solutionSettings, Formatting.Indented);
+                var result = ConsoleHelpers.GetYesNo($"Do the settings look correct?{Environment.NewLine}{firstSettings}{Environment.NewLine}");
+                if (result)
+                {
+                    return solutionSettings;
+                }
+            }
+
+            // defaults
+            if (solutionSettings == null)
+            {
+                solutionSettings = new SolutionSettings();
+            }
+            if (solutionSettings.GitSettings == null)
+            {
+                solutionSettings.GitSettings = new GitSettings();
+            }
+
+            // go through options and ask about them
+            var settings = string.Empty;
+            do
+            {
+                // go through each main option and ask about it
+                solutionSettings.Name = ConsoleHelpers.GetInput($"Solution Name", solutionSettings.Name ?? string.Empty);
+
+                solutionSettings.Author = ConsoleHelpers.GetInput($"Solution Author", solutionSettings.Author ?? string.Empty);
+
+                solutionSettings.Description = ConsoleHelpers.GetInput($"Solution Description", solutionSettings.Description ?? string.Empty);
+
+                solutionSettings.Version = ConsoleHelpers.GetInput($"Solution Starting Version", solutionSettings.Version ?? string.Empty);
+
+                // nuget settings
+                solutionSettings.Tags = ConsoleHelpers.GetInput("Solution Tags (comma-separated)", string.Join(",", solutionSettings.Tags) ?? string.Empty).Split(",").ToList();
+
+                solutionSettings.LicenseExpresion = ConsoleHelpers.GetInput($"Solution LicenseExpresion", solutionSettings.LicenseExpresion ?? string.Empty);
+
+                // go through each git option and ask about it
+
+
+                // serialize for display
+                settings = JsonConvert.SerializeObject(solutionSettings, Formatting.Indented);
+            } while (!ConsoleHelpers.GetYesNo($"Do the settings look correct?{Environment.NewLine}{settings}{Environment.NewLine}"));
+
+            return solutionSettings;
         }
     }
 }

@@ -21,9 +21,34 @@ namespace Templater.Options
 
             var startTime = DateTime.Now;
             Console.WriteLine("Updating templates...");
-            Core.Templater.Instance.UpdateTemplates(options.ForceUpdate);
+            var counts = Core.Templater.Instance.UpdateTemplates(options.ForceUpdate);
             var totalTime = DateTime.Now - startTime;
-            Console.WriteLine($"Templates updated in {totalTime.TotalSeconds.ToString("0.00")} second(s)!");
+            var totalSeconds = totalTime.TotalSeconds.ToString("0.00");
+            Console.WriteLine($"Template updating/downloading ran in {totalSeconds} second(s). Results:");
+
+            var localCount = counts.Item1;
+            var remoteCount = counts.Item2;
+            var newCount = counts.Item3;
+            var updatedCount = counts.Item4;
+
+            if (localCount > remoteCount)
+            {
+                Console.WriteLine($"Orphaned templates (only exist locally): {localCount - remoteCount}");
+            }
+
+            if (newCount + updatedCount == 0)
+            {
+                Console.WriteLine($"No new or updated templates");
+            }
+            if (newCount > 0)
+            {
+                Console.WriteLine($"Downloaded {newCount} new template(s)");
+            }
+            if (updatedCount > 0)
+            {
+                Console.WriteLine($"Updated {updatedCount} template(s)");
+            }
+
             return "Templates updated";
         }
     }

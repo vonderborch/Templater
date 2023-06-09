@@ -23,6 +23,16 @@
         public static string TemplaterTemplatesCacheFileName = "template_cache.json";
 
         /// <summary>
+        /// The templater solution configuration file name
+        /// </summary>
+        public static string TemplaterSolutionConfigFileName = "solution_config.json";
+
+        /// <summary>
+        /// The templater solution configuration backup directory
+        /// </summary>
+        public static string TemplaterSolutionConfigBackupDirectory = "SolutionConfigBackups";
+
+        /// <summary>
         /// The templater templates directory
         /// </summary>
         public static string TemplaterTemplatesDirectory = "Templates";

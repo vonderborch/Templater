@@ -48,7 +48,7 @@ namespace Templater
              * args = new string[] { "--help" };
              *        Gets help!
             */
-            args = new string[] { "list-templates", "-q" };
+            args = new string[] { "prepare", "-d", @"C:\Users\ricky\Dropbox\Projects\Templater-Templates\TEMPLATES_BASE\Velentr.BASE", "-o", @"C:\Users\ricky\Dropbox\Projects\Templater-Templates\TEMPLATES", "-s" };
 
             // Ask for configuration if it doesn't exist
             if (!Core.Templater.Instance.ValidateConfiguration())

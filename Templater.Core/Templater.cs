@@ -98,6 +98,19 @@ namespace Templater.Core
         public string SettingsFileName => Path.Combine(CoreDirectory, Constants.TemplaterSettingsFileName);
 
         /// <summary>
+        /// Gets the templater solution configuration file.
+        /// </summary>
+        /// <value>
+        /// The templater solution configuration file.
+        /// </value>
+        public string TemplaterSolutionConfigurationFile => Path.Combine(CoreDirectory, Constants.TemplaterSolutionConfigFileName);
+
+        /// <summary>
+        /// The templater solution configuration backup directory
+        /// </summary>
+        public string TemplaterSolutionConfigurationBackupDirectory => Path.Combine(CoreDirectory, Constants.TemplaterSolutionConfigBackupDirectory);
+
+        /// <summary>
         /// Gets the templates directory.
         /// </summary>
         /// <value>
@@ -189,7 +202,7 @@ namespace Templater.Core
         /// <summary>
         /// Updates the templates.
         /// </summary>
-        public void UpdateTemplates(bool forceUpdate = false)
+        public (int, int, int, int) UpdateTemplates(bool forceUpdate = false)
         {
             var remoteTemplates = new TemplateInfoList();
 
@@ -234,6 +247,8 @@ namespace Templater.Core
             var templatesToUpdate = remoteTemplates.Templates.Where(t => !localTemplates.TemplateMap.ContainsKey(t.Name) || localTemplates.TemplateMap[t.Name].SHA != t.SHA).ToList();
 
             // download the new/updated templates
+            var totalNew = 0;
+            var totalUpdated = 0;
             foreach (var template in templatesToUpdate)
             {
                 if (template != null)
@@ -263,12 +278,14 @@ namespace Templater.Core
                             if (oldTemplate.Name == template.Name)
                             {
                                 oldTemplate.SHA = template.SHA;
+                                totalUpdated++;
                             }
                         }
                     }
                     else
                     {
                         localTemplates.Templates.Add(template);
+                        totalNew++;
                     }
                 }
             }
@@ -280,6 +297,8 @@ namespace Templater.Core
 
             // Load the templates
             RefreshLocalTemplatesList();
+
+            return (localTemplates.Templates.Count, remoteTemplates.Templates.Count, totalNew, totalUpdated);
         }
 
         public void RefreshLocalTemplatesList()
