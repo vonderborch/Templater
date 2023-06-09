@@ -1,7 +1,5 @@
 ﻿using CommandLine;
 using Newtonsoft.Json;
-using System.ComponentModel;
-using Templater.Core;
 using Templater.Helpers;
 
 namespace Templater.Options
@@ -12,38 +10,62 @@ namespace Templater.Options
         [Option('d', "directory", Required = true, HelpText = "The directory to prepare as a template")]
         public string Directory { get; set; }
 
-        [Option('o', "output-directory", Required = false, HelpText = "The output directory to place the template into")]
+        [Option('o', "output-directory", Required = true, HelpText = "The output directory to place the template into")]
         public string OutputDirectory { get; set; }
 
         [Option('t', "type", Required = false, Default = "auto", HelpText = "The type of the solution to prepare. Defaults to auto.")]
         public string SolutionType { get; set; }
 
+        [Option('s', "skip-cleaning", Required = false, Default = false, HelpText = "If flag is provided, the working directory won't be deleted at the end of the prepare process.")]
+        public bool SkipCleaning { get; set; }
+
+        [Option('i', "what-if", Required = false, Default = false, HelpText = "If flag is provided, the program will not be prepared, but the user will be guided through all settings.")]
+        public bool WhatIf { get; set; }
+
+        /// <summary>
+        /// Executes the prepare template steps with the specified options.
+        /// </summary>
+        /// <param name="option">The option.</param>
+        /// <returns>
+        /// The result of the execution.
+        /// </returns>
+        /// <exception cref="System.ArgumentException">Valid arguments: {validShortNames}</exception>
+        /// <exception cref="System.IO.DirectoryNotFoundException">No valid solution type found in directory! Supported solution types: {validNames}</exception>
+        /// <exception cref="System.IO.InvalidDataException">Template info file is invalid!</exception>
         public override string Execute(AbstractOption option)
         {
+            Console.WriteLine("Gathering template configuration info...");
             // the actual options we are dealing with
             var options = (Prepare)option;
 
             // Solution type
+            var validShortNames = string.Join(", ", Core.Templater.Instance.TemplaterShortNames);
+            validShortNames = $"auto, {validShortNames}";
             switch (options.SolutionType.ToLowerInvariant())
             {
                 case "auto":
                     break;
+
                 case "dotsln":
                     break;
+
                 default:
-                    throw new ArgumentException("Valid arguments: auto, dotsln");
+
+                    throw new ArgumentException($"Valid arguments: {validShortNames}");
             }
             options.SolutionType = DetectSolutionType(options.Directory);
             if (options.SolutionType == string.Empty)
             {
-                throw new System.IO.DirectoryNotFoundException("No valid solution type found in directory! Supported solution types: .sln");
+                var validNames = string.Join(", ", Core.Templater.Instance.TemplaterLongNames);
+                throw new System.IO.DirectoryNotFoundException($"No valid solution type found in directory! Supported solution types: {validNames}");
             }
 
             // the prepare options
             var prepareOptions = new Core.PrepareOptions()
             {
                 Directory = options.Directory,
-                OutputDirectory = options.OutputDirectory
+                OutputDirectory = options.OutputDirectory,
+                SkipCleaning = options.SkipCleaning,
             };
 
             // check if the solution directory already has a template info file...
@@ -69,7 +91,19 @@ namespace Templater.Options
             File.WriteAllText(templateInfoFileName, saveFileContents);
 
             // try to prepare the solution
-            return Core.Templater.Instance.Prepare(prepareOptions, options.SolutionType);
+            if (!WhatIf)
+            {
+                Console.WriteLine($"Preparing solution {prepareOptions.Directory} as {options.SolutionType}...");
+                var result = Core.Templater.Instance.Prepare(prepareOptions, options.SolutionType);
+                Console.WriteLine(result);
+                return result;
+            }
+            // Otherwise, the user will be told that their settings have been saved and the project not prepared
+            else
+            {
+                Console.WriteLine($"Project not prepared, but configuration settings saved: {templateInfoFileName}");
+                return "Success";
+            }
         }
 
         public Templater.Core.Template.Template SetTemplateOptions(Templater.Core.Template.Template template)
@@ -142,7 +176,7 @@ namespace Templater.Options
                             }
                         }
                     }
-                    
+
                     // add new
                     while (ConsoleHelpers.GetYesNo("Add new replacement text pair?", false))
                     {
@@ -177,22 +211,18 @@ namespace Templater.Options
             return template;
         }
 
-        public static string DetectSolutionType(string directory)
+        /// <summary>
+        /// Detects the type of the solution.
+        /// </summary>
+        /// <param name="directory">The directory.</param>
+        /// <returns></returns>
+        private static string DetectSolutionType(string directory)
         {
-            foreach (var file in System.IO.Directory.GetFiles(directory))
+            foreach (var templater in Templater.Core.Templater.Instance.TemplaterImplementations)
             {
-                if (file.EndsWith(".sln"))
+                if (templater.DirectoryValidForTemplater(directory))
                 {
-                    return "dotsln";
-                }
-            }
-
-            foreach (var subDirectory in System.IO.Directory.GetDirectories(directory))
-            {
-                var result = DetectSolutionType(subDirectory);
-                if (result != string.Empty)
-                {
-                    return result;
+                    return templater.ShortName;
                 }
             }
 

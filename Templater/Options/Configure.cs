@@ -7,6 +7,13 @@ namespace Templater.Options
     [Verb("configure", HelpText = "Configure settings")]
     internal class Configure : AbstractOption
     {
+        /// <summary>
+        /// Executes the configuration steps with the specified options.
+        /// </summary>
+        /// <param name="option">The option.</param>
+        /// <returns>
+        /// The result of the execution.
+        /// </returns>
         public override string Execute(AbstractOption option)
         {
             var settings = new Settings();

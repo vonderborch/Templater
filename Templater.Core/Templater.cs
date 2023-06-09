@@ -1,43 +1,124 @@
-﻿using Octokit;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Reflection.PortableExecutable;
-using System.Text;
-using System.Threading.Tasks;
+﻿using ICSharpCode.SharpZipLib.Zip;
+using Newtonsoft.Json;
+using Octokit;
 using Templater.Core.Implementations.dotsln;
 using Templater.Core.Repositories;
+using FileMode = System.IO.FileMode;
 
 namespace Templater.Core
 {
     public sealed class Templater
     {
-        private static readonly Lazy<Templater> lazy =
-    new Lazy<Templater>(() => new Templater());
+        /// <summary>
+        /// The lazy
+        /// </summary>
+        private static readonly Lazy<Templater> lazy = new Lazy<Templater>(() => new Templater());
 
+        /// <summary>
+        /// The settings
+        /// </summary>
         private Settings? _settings;
 
+        /// <summary>
+        /// The git client
+        /// </summary>
         private GitHubClient? _gitClient;
 
+        /// <summary>
+        /// Gets the instance.
+        /// </summary>
+        /// <value>
+        /// The instance.
+        /// </value>
         public static Templater Instance { get { return lazy.Value; } }
 
+        /// <summary>
+        /// The templates
+        /// </summary>
         public List<Template.Template> Templates = new();
 
+        /// <summary>
+        /// Prevents a default instance of the <see cref="Templater"/> class from being created.
+        /// </summary>
         private Templater()
         {
             _settings = null;
+            TemplaterImplementations = new()
+            {
+                new DotSlnTemplater()
+            };
         }
 
+        /// <summary>
+        /// Gets the templater implementations.
+        /// </summary>
+        /// <value>
+        /// The templater implementations.
+        /// </value>
+        public List<AbstractTemplater> TemplaterImplementations { get; }
+
+        /// <summary>
+        /// Gets the templater map.
+        /// </summary>
+        /// <value>
+        /// The templater map.
+        /// </value>
+        public Dictionary<string, AbstractTemplater> TemplaterMap => TemplaterImplementations.ToDictionary(t => t.ShortName, t => t);
+
+        /// <summary>
+        /// Gets the templater short names.
+        /// </summary>
+        /// <value>
+        /// The templater short names.
+        /// </value>
+        public List<string> TemplaterShortNames => TemplaterImplementations.Select(t => t.ShortName).ToList();
+
+        /// <summary>
+        /// Gets the templater long names.
+        /// </summary>
+        /// <value>
+        /// The templater long names.
+        /// </value>
+        public List<string> TemplaterLongNames => TemplaterImplementations.Select(t => t.LongName).ToList();
+
+        /// <summary>
+        /// Gets the name of the settings file.
+        /// </summary>
+        /// <value>
+        /// The name of the settings file.
+        /// </value>
         public string SettingsFileName => Path.Combine(CoreDirectory, Constants.TemplaterSettingsFileName);
 
+        /// <summary>
+        /// Gets the templates directory.
+        /// </summary>
+        /// <value>
+        /// The templates directory.
+        /// </value>
         public string TemplatesDirectory => Path.Combine(CoreDirectory, Constants.TemplaterTemplatesDirectory);
 
-        public string TemplatesInfoFileName => Path.Combine(CoreDirectory, Constants.TemplaterTemplatesInfoFileName);
+        /// <summary>
+        /// Gets the name of the templates information file.
+        /// </summary>
+        /// <value>
+        /// The name of the templates information file.
+        /// </value>
+        public string TemplatesCacheFileName => Path.Combine(CoreDirectory, Constants.TemplaterTemplatesCacheFileName);
 
-        public string CoreDirectory => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
-, Constants.TemplaterDirectory);
+        /// <summary>
+        /// Gets the core directory.
+        /// </summary>
+        /// <value>
+        /// The core directory.
+        /// </value>
+        public string CoreDirectory => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), Constants.TemplaterDirectory);
 
+        /// <summary>
+        /// Gets the settings.
+        /// </summary>
+        /// <value>
+        /// The settings.
+        /// </value>
         public Settings Settings
         {
             get
@@ -51,6 +132,12 @@ namespace Templater.Core
             }
         }
 
+        /// <summary>
+        /// Gets the git client.
+        /// </summary>
+        /// <value>
+        /// The git client.
+        /// </value>
         public GitHubClient GitClient
         {
             get
@@ -65,41 +152,160 @@ namespace Templater.Core
             }
         }
 
+        /// <summary>
+        /// Validates the configuration.
+        /// </summary>
+        /// <returns></returns>
         public bool ValidateConfiguration()
         {
             return File.Exists(SettingsFileName);
         }
 
+        /// <summary>
+        /// Prepares the specified options.
+        /// </summary>
+        /// <param name="options">The options.</param>
+        /// <param name="type">The type.</param>
+        /// <returns></returns>
+        /// <exception cref="System.NotImplementedException">Type {type} not implemented!</exception>
         public string Prepare(PrepareOptions options, string type)
         {
-            switch (type.ToLowerInvariant())
+            if (TemplaterMap.TryGetValue(type, out var templater))
             {
-                case "dotsln":
-                    return new DotSlnTemplater().Prepare(options);
-                default:
-                    throw new NotImplementedException($"Type {type} not implemented!");
+                return templater.Prepare(options);
             }
+
+            throw new NotImplementedException($"Type {type} not implemented!");
         }
 
-        public void UpdateTemplates()
+        /// <summary>
+        /// Updates the templates.
+        /// </summary>
+        public void UpdateTemplates(bool forceUpdate = false)
         {
+            var remoteTemplates = new TemplateInfoList();
+
+            // Delete the templates directory and filecache if force update is true
+            if (forceUpdate)
+            {
+                if (Directory.Exists(TemplatesDirectory))
+                {
+                    Directory.Delete(TemplatesDirectory, true );
+                }
+                if (File.Exists(TemplatesCacheFileName))
+                {
+                    File.Delete(TemplatesCacheFileName);
+                }
+            }
+
+            // Create the templates directory and filecache if it doesn't exist
+            if (!Directory.Exists(TemplatesDirectory))
+            {
+                Directory.CreateDirectory(TemplatesDirectory);
+            }
+            if (!File.Exists(TemplatesCacheFileName))
+            {
+                File.WriteAllText(TemplatesCacheFileName, JsonConvert.SerializeObject(remoteTemplates, Formatting.Indented));
+            }
+
             // Get all templates from all repositories
-            var allTemplates = new TemplateInfoList();
-            foreach (var repository in Settings.TemplateRepositories)
+            foreach (var repository in Settings.UniqueRepositories)
             {
                 var repoTemplates = GetTemplateListForRepository(repository);
-                allTemplates.Templates.AddRange(repoTemplates);
+                remoteTemplates.Templates.AddRange(repoTemplates);
             }
 
             // load the local templatesinfo file to see current template status
+            var localTemplates = JsonConvert.DeserializeObject<TemplateInfoList>(File.ReadAllText(TemplatesCacheFileName));
+            if (localTemplates == null)
+            {
+                localTemplates = new TemplateInfoList();
+            }
 
             // compare the two lists to see what needs to be updated
+            var templatesToUpdate = remoteTemplates.Templates.Where(t => !localTemplates.TemplateMap.ContainsKey(t.Name) || localTemplates.TemplateMap[t.Name].SHA != t.SHA).ToList();
 
             // download the new/updated templates
+            foreach (var template in templatesToUpdate)
+            {
+                if (template != null)
+                {
+                    var file = Path.Combine(TemplatesDirectory, template.Name);
+                    if (File.Exists(file))
+                    {
+                        File.Delete(file);
+                    }
+
+                    using (var client = new HttpClient())
+                    {
+                        using (var s = client.GetStreamAsync(template.Url))
+                        {
+                            using (var fs = new FileStream(file, FileMode.Create))
+                            {
+                                s.Result.CopyTo(fs);
+                            }
+                        }
+                    }
+
+                    // update the local templatesinfo mapping
+                    if (localTemplates.TemplateMap.ContainsKey(template.Name))
+                    {
+                        foreach (var oldTemplate in localTemplates.Templates)
+                        {
+                            if (oldTemplate.Name == template.Name)
+                            {
+                                oldTemplate.SHA = template.SHA;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        localTemplates.Templates.Add(template);
+                    }
+                }
+            }
+
+            /// save the local templatesinfo file
+            File.WriteAllText(TemplatesCacheFileName, JsonConvert.SerializeObject(localTemplates, Formatting.Indented));
+            Settings.LastTemplatesUpdateCheck = DateTime.Now;
+            Settings.SaveFile(SettingsFileName);
 
             // Load the templates
+            RefreshLocalTemplatesList();
         }
 
+        public void RefreshLocalTemplatesList()
+        {
+            // load the local templatesinfo file to see current template status
+            var localTemplates = JsonConvert.DeserializeObject<TemplateInfoList>(File.ReadAllText(TemplatesCacheFileName));
+            if (localTemplates == null)
+            {
+                localTemplates = new TemplateInfoList();
+            }
+            Templates.Clear();
+
+            // create the templates directory if it doesn't exist
+            if (!Directory.Exists(TemplatesDirectory))
+            {
+                Directory.CreateDirectory(TemplatesDirectory);
+            }
+
+            // go through each template in the templates directory...
+            var templates = Directory.GetFiles(TemplatesDirectory, $"*.{Constants.TemplateFileType}");
+            foreach (var file in templates)
+            {
+                var fileName = Path.GetFileName(file);
+                var repoMeta = localTemplates.TemplateMap.ContainsKey(fileName) ? localTemplates.TemplateMap[fileName] : null;
+                var template = new Template.Template(file, repoMeta);
+                Templates.Add(template);
+            }
+        }
+
+        /// <summary>
+        /// Gets the template list for repository.
+        /// </summary>
+        /// <param name="repository">The repository.</param>
+        /// <returns></returns>
         public List<Repositories.TemplateInfo> GetTemplateListForRepository(string repository)
         {
             var splitName = repository.Split('/');
@@ -113,6 +319,12 @@ namespace Templater.Core
             return templates;
         }
 
+        /// <summary>
+        /// Gets the template information.
+        /// </summary>
+        /// <param name="repo">The repo.</param>
+        /// <param name="contents">The contents.</param>
+        /// <returns></returns>
         public List<Repositories.TemplateInfo> GetTemplateInfo(string repo, List<GitRepoContents> contents)
         {
             var output = new List<Repositories.TemplateInfo>();

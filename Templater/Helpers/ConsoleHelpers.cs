@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Templater.Helpers
+﻿namespace Templater.Helpers
 {
     internal static class ConsoleHelpers
     {
+        /// <summary>
+        /// Gets the input.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="defaultDisplayValue">The default display value.</param>
+        /// <param name="defaultValue">The default value.</param>
+        /// <returns>The input response.</returns>
         public static string GetInput(string message, string defaultDisplayValue = "", string defaultValue = "")
         {
             var defaultMessage = defaultDisplayValue == string.Empty ? string.Empty : $" ({defaultDisplayValue})";
@@ -17,6 +18,12 @@ namespace Templater.Helpers
             return string.IsNullOrEmpty(input) ? defaultReturn : input;
         }
 
+        /// <summary>
+        /// Gets whether the user agrees or not.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="defaultYes">if set to <c>true</c> [default yes].</param>
+        /// <returns>True if Yes, False if No.</returns>
         public static bool GetYesNo(string message, bool defaultYes = true)
         {
             while (true)

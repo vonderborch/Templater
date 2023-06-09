@@ -6,9 +6,24 @@ namespace Templater.Core.Repositories
     [DebuggerDisplay("{Info}")]
     public class GitRepoContents
     {
+        /// <summary>
+        /// The information
+        /// </summary>
         public RepositoryContent Info;
+
+        /// <summary>
+        /// The child content
+        /// </summary>
         public List<GitRepoContents> ChildContent;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GitRepoContents"/> class.
+        /// </summary>
+        /// <param name="info">The information.</param>
+        /// <param name="owner">The owner.</param>
+        /// <param name="name">The name.</param>
+        /// <param name="path">The path.</param>
+        /// <param name="currentDepth">The current depth.</param>
         public GitRepoContents(RepositoryContent info, string owner, string name, string path, int currentDepth = 0)
         {
             Info = info;
@@ -25,6 +40,12 @@ namespace Templater.Core.Repositories
             }
         }
 
+        /// <summary>
+        /// Converts to string.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="System.String" /> that represents this instance.
+        /// </returns>
         public override string ToString()
         {
             return Info.ToString() ?? string.Empty;
