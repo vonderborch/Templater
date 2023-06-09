@@ -38,6 +38,14 @@ namespace Templater.Core
         public List<Template.Template> Templates = new();
 
         /// <summary>
+        /// Gets the templates map.
+        /// </summary>
+        /// <value>
+        /// The templates map.
+        /// </value>
+        public Dictionary<string, Template.Template> TemplatesMap => Templates.ToDictionary(t => t.Name, t => t);
+
+        /// <summary>
         /// Prevents a default instance of the <see cref="Templater"/> class from being created.
         /// </summary>
         private Templater()

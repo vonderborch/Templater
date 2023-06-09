@@ -1,4 +1,5 @@
 ﻿using CommandLine;
+using Templater.Helpers;
 
 namespace Templater.Options
 {
@@ -12,10 +13,12 @@ namespace Templater.Options
         /// <returns>
         /// The result of the execution.
         /// </returns>
-        /// <exception cref="System.NotImplementedException"></exception>
         public override string Execute(AbstractOption option)
         {
-            throw new System.NotImplementedException();
+            Console.WriteLine("Opening browser to https://github.com/vonderborch/Templater/issues/new ...");
+            UrlHelpers.OpenUrl("https://github.com/vonderborch/Templater/issues/new", "Please go to https://github.com/vonderborch/Templater/issues/new to file a bug or request a new feature!");
+
+            return "Success";
         }
     }
 }

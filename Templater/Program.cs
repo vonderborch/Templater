@@ -24,14 +24,31 @@ namespace Templater
              *        
              *        
              *        
-             *        
              * args = new string[] { "update-templates" };
              *        Checks for template updates
              *        
              * args = new string[] { "update-templates", "-f" };
              *        Forces template updates
+             *        
+             *        
+             *        
+             * args = new string[] { "report-issue" };
+             *        Reports an issue
+             *        
+             *        
+             *        
+             * args = new string[] { "list-templates" };
+             *        Lists all available templates
+             *        
+             * args = new string[] { "list-templates", "-q" };
+             *        Lists all available templates but not details on version, etc.
+             *        
+             *        
+             *        
+             * args = new string[] { "--help" };
+             *        Gets help!
             */
-            args = new string[] { "update-templates", "-f" };
+            args = new string[] { "list-templates", "-q" };
 
             // Ask for configuration if it doesn't exist
             if (!Core.Templater.Instance.ValidateConfiguration())
