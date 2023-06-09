@@ -31,7 +31,7 @@ namespace Templater
              * args = new string[] { "update-templates", "-f" };
              *        Forces template updates
             */
-            args = new string[] { "prepare", "-d", @"C:\Users\ricky\Dropbox\Projects\Templater-Templates\TEMPLATES_BASE\Velentr.DUAL_SUPPORT_WITH_GENERIC", "-o", @"C:\Users\ricky\Dropbox\Projects\Templater-Templates\TEMPLATES" };
+            args = new string[] { "update-templates", "-f" };
 
             // Ask for configuration if it doesn't exist
             if (!Core.Templater.Instance.ValidateConfiguration())
@@ -46,7 +46,7 @@ namespace Templater
             }
 
             // parse command line arguments and execute the appropriate command
-            var parseResults = Parser.Default.ParseArguments<Prepare, Generate, ListTemplates, Configure, ReportIssue>(args);
+            var parseResults = Parser.Default.ParseArguments<Prepare, Generate, ListTemplates, Configure, UpdateTemplates, ReportIssue>(args);
 
             parseResults.MapResult(
                 (Prepare opts) => new Prepare().Execute(opts),
@@ -54,6 +54,7 @@ namespace Templater
                 (ListTemplates opts) => new ListTemplates().Execute(opts),
                 (Configure opts) => new Configure().Execute(opts),
                 (ReportIssue opts) => new ReportIssue().Execute(opts),
+                (UpdateTemplates opts) => new UpdateTemplates().Execute(opts),
                 _ => MakeError()
                                   );
         }
