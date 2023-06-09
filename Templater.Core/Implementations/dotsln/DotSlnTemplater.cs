@@ -114,7 +114,7 @@ namespace Templater.Core.Implementations.dotsln
 
             // Step 4 - Archive the Directory and Delete the working directory
             var archivePath = Path.Combine(options.OutputDirectory, $"{directoryName}.zip");
-            ArchiveDirectory(actualDirectory, directoryName, options.SkipCleaning);
+            ArchiveDirectory(actualDirectory, archivePath, options.SkipCleaning);
 
             var totalTime = DateTime.Now - startTime;
             return $"Successfully prepared the template in {totalTime.TotalSeconds.ToString("0.00")} second(s): {archivePath}";

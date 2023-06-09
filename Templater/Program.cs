@@ -31,7 +31,7 @@ namespace Templater
              * args = new string[] { "update-templates", "-f" };
              *        Forces template updates
             */
-            args = new string[] { "prepare", "-d", @"C:\Users\ricky\Dropbox\Projects\Templater-Templates\TEMPLATES_BASE\Velentr.BASE", "-o", @"C:\Users\ricky\Dropbox\Projects\Templater-Templates\TEMPLATES" };
+            args = new string[] { "prepare", "-d", @"C:\Users\ricky\Dropbox\Projects\Templater-Templates\TEMPLATES_BASE\Velentr.DUAL_SUPPORT_WITH_GENERIC", "-o", @"C:\Users\ricky\Dropbox\Projects\Templater-Templates\TEMPLATES" };
 
             // Ask for configuration if it doesn't exist
             if (!Core.Templater.Instance.ValidateConfiguration())

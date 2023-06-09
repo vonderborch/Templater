@@ -32,6 +32,7 @@ namespace Templater.Core.Template
         /// <summary>
         /// The information on the repo for the template
         /// </summary>
+        [JsonIgnore]
         public TemplateInfo RepoInfo;
 
         /// <summary>
@@ -42,6 +43,7 @@ namespace Templater.Core.Template
         /// <summary>
         /// The file path
         /// </summary>
+        [JsonIgnore]
         public string FilePath;
 
         /// <summary>
