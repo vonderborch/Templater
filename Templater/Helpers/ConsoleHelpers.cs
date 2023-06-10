@@ -1,4 +1,7 @@
-﻿namespace Templater.Helpers
+﻿using System;
+using System.Collections;
+
+namespace Templater.Helpers
 {
     internal static class ConsoleHelpers
     {
@@ -16,6 +19,36 @@
             var input = Console.ReadLine();
             var defaultReturn = defaultValue == string.Empty ? defaultDisplayValue : defaultValue;
             return string.IsNullOrEmpty(input) ? defaultReturn : input;
+        }
+        /// <summary>
+        /// Gets the input.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="defaultDisplayValue">The default display value.</param>
+        /// <param name="defaultValue">The default value.</param>
+        /// <returns>The input response.</returns>
+        public static T GetInputForEnum<T>(string message, string defaultDisplayValue = "", string defaultValue = "") where T : struct, IConvertible
+        {
+            var enumValues = Enum.GetNames(typeof(T));
+            var validValues = string.Join(", ", enumValues);
+            var defaultMessage = defaultDisplayValue == string.Empty ? string.Empty : $" ({defaultDisplayValue})";
+
+            var actualMessage = $"{message} (Valid Values: {validValues}){defaultMessage}: ";
+            var defaultReturn = defaultValue == string.Empty ? defaultDisplayValue : defaultValue;
+
+            var input = "";
+            do
+            {
+                Console.WriteLine(actualMessage);
+                input = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(input))
+                {
+                    input = defaultReturn;
+                    break;
+                }
+            } while (!enumValues.Any(x => x == input));
+
+            return Enum.Parse<T>(input);
         }
 
         /// <summary>

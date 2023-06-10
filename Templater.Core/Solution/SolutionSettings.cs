@@ -9,7 +9,6 @@ namespace Templater.Core.Solution
 {
     public class SolutionSettings
     {
-        public string Name;
         public string Author;
         public string Description;
         public List<string> Tags;

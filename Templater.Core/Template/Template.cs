@@ -90,6 +90,7 @@ namespace Templater.Core.Template
                             }
 
                             JsonConvert.PopulateObject(contents, this);
+                            break;
                         }
                     }
                 }
@@ -99,8 +100,15 @@ namespace Templater.Core.Template
             {
                 throw new Exception($"Template {Name} is invalid!");
             }
-            Settings?.ReplacementText.Add(new Tuple<string, string>(Path.GetFileNameWithoutExtension(file), Constants.SpecialTextProjectName));
-            Settings?.ReplacementText.Add(new Tuple<string, string>(Name, Constants.SpecialTextProjectName));
+
+            var namesToCheck = new List<string>() { Name, Path.GetFileNameWithoutExtension(file) };
+            foreach (var name in namesToCheck)
+            {
+                if (!Settings.ReplacementText.Any(x => x.Item1 == name))
+                {
+                    Settings.ReplacementText.Add(new Tuple<string, string>(name, Constants.SpecialTextProjectName));
+                }
+            }
         }
     }
 }

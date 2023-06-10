@@ -1,7 +1,33 @@
-﻿namespace Templater.Core
+﻿using Octokit;
+using Templater.Core.Solution;
+
+namespace Templater.Core
 {
     public static class Constants
     {
+        /// <summary>
+        /// The unique identifier padding length
+        /// </summary>
+        private const int GUID_PADDING_LENGTH = 9;
+
+        /// <summary>
+        /// The unique identifier padding
+        /// </summary>
+        public static readonly string GUID_PADDING = $"D{GUID_PADDING_LENGTH}";
+
+        /// <summary>
+        /// The regex tags
+        /// </summary>
+        public static readonly string[] REGEX_TAGS =
+        {
+            "[AUTHOR]",
+            "[COMPANY]",
+            "[TAGS]",
+            "[DESCRIPTION]",
+            "[LICENSE]",
+            "[VERSION]",
+        };
+
         /// <summary>
         /// The templater directory
         /// </summary>
@@ -81,11 +107,16 @@
         /// <summary>
         //  Name of the special text current full.
         /// </summary>
-        public static string SpecialTextCurrentFullName = "<CurrentFullName>";
+        public static string SpecialTextCurrentFullName = "<CurrentUserName>";
 
         /// <summary>
         /// Name of the specialtext project.
         /// </summary>
-        public static string SpecialTextProjectName = "<ProjectName>";
+        public static string SpecialTextProjectName = "<SolutionName>";
+
+        /// <summary>
+        /// The default git repo mode
+        /// </summary>
+        public static GitRepoMode DefaultGitRepoMode = GitRepoMode.NoRepo;
     }
 }

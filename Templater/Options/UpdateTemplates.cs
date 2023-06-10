@@ -30,23 +30,25 @@ namespace Templater.Options
             var remoteCount = counts.Item2;
             var newCount = counts.Item3;
             var updatedCount = counts.Item4;
+            var orphanedTemplates = counts.Item5;
 
-            if (localCount > remoteCount)
+            if (orphanedTemplates.Count > 0)
             {
-                Console.WriteLine($"Orphaned templates (only exist locally): {localCount - remoteCount}");
+                Console.WriteLine($" - Orphaned templates (only exist locally): {localCount - remoteCount}");
+                Console.WriteLine($" - Orphaned Templates: {string.Join(", ", orphanedTemplates)}");
             }
 
             if (newCount + updatedCount == 0)
             {
-                Console.WriteLine($"No new or updated templates");
+                Console.WriteLine($" - No new or updated templates");
             }
             if (newCount > 0)
             {
-                Console.WriteLine($"Downloaded {newCount} new template(s)");
+                Console.WriteLine($" - Downloaded {newCount} new template(s)");
             }
             if (updatedCount > 0)
             {
-                Console.WriteLine($"Updated {updatedCount} template(s)");
+                Console.WriteLine($" - Updated {updatedCount} template(s)");
             }
 
             return "Templates updated";

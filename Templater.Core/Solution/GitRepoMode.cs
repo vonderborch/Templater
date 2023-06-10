@@ -11,7 +11,5 @@ namespace Templater.Core.Solution
         NoRepo
       , NewRepoOnlyInit
       , NewRepoFull
-      , ExistingRepoCleanSlate
-      , ExistingRepoKeepExistingCode
     }
 }

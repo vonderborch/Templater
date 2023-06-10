@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using Newtonsoft.Json;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Templater.Core.Implementations.dotsln
@@ -6,28 +7,18 @@ namespace Templater.Core.Implementations.dotsln
     internal class DotSlnTemplater : AbstractTemplater
     {
         /// <summary>
-        /// The unique identifier padding length
-        /// </summary>
-        private const int GUID_PADDING_LENGTH = 9;
-
-        /// <summary>
-        /// The unique identifier padding
-        /// </summary>
-        private static readonly string GUID_PADDING = $"D{GUID_PADDING_LENGTH}";
-
-        /// <summary>
         /// The regex tags
         /// </summary>
         private static readonly string[][] REGEX_TAGS =
         {
-            new string[] { "Authors", "Author" }
-            , new string[] { "Company", "Company" }
-            , new string[] { "PackageTags", "tags" }
-            , new string[] { "Description", "Description" }
-            , new string[] { "PackageLicenseExpression", "License" }
-            , new string[] { "Version", "Version" }
-            , new string[] { "FileVersion", "Version" }
-            , new string[] { "AssemblyVersion", "Version" }
+            new string[] { "Authors", Constants.REGEX_TAGS[0] }
+            , new string[] { "Company", Constants.REGEX_TAGS[1] }
+            , new string[] { "PackageTags", Constants.REGEX_TAGS[2] }
+            , new string[] { "Description", Constants.REGEX_TAGS[3] }
+            , new string[] { "PackageLicenseExpression", Constants.REGEX_TAGS[4] }
+            , new string[] { "Version", Constants.REGEX_TAGS[5] }
+            , new string[] { "FileVersion", Constants.REGEX_TAGS[5] }
+            , new string[] { "AssemblyVersion", Constants.REGEX_TAGS[5] }
         };
 
         /// <summary>
@@ -100,19 +91,25 @@ namespace Templater.Core.Implementations.dotsln
             var directoryName = options.TemplateSettings.Name.Replace(" ", "_");
             var actualDirectory = Path.Combine(options.OutputDirectory, directoryName);
 
-            // Step 1: Delete the working directory if it already exists
+            // Step 1 - Delete the working directory if it already exists
             if (Directory.Exists(actualDirectory))
             {
                 Directory.Delete(actualDirectory, true);
             }
 
-            // Step 2: Copy the source directory to the working directory
+            // Step 2 - Copy the source directory to the working directory
             CopyDirectory(options.Directory, actualDirectory, options.TemplateSettings.Settings.DirectoriesExcludedInPrepare);
 
-            // Step 3 - Update any solutions in the working directory
-            UpdateSolutions(actualDirectory, options);
+            // Step 3 - Get Guids and Update template_info.json
+            var guids = GetGuids(actualDirectory);
+            var templateInfo = JsonConvert.DeserializeObject<Template.TemplateWithGuids>(File.ReadAllText(Path.Combine(actualDirectory, Constants.TemplaterTemplatesInfoFileName)));
+            templateInfo.GuidsCount = guids.Count;
+            File.WriteAllText(Path.Combine(actualDirectory, Constants.TemplaterTemplatesInfoFileName), JsonConvert.SerializeObject(templateInfo, Formatting.Indented));
 
-            // Step 4 - Archive the Directory and Delete the working directory
+            // Step 4 - Update any solutions in the working directory
+            UpdateSolutions(actualDirectory, options, guids);
+
+            // Step 5 - Archive the Directory and Delete the working directory
             var archivePath = Path.Combine(options.OutputDirectory, $"{directoryName}.zip");
             ArchiveDirectory(actualDirectory, archivePath, options.SkipCleaning);
 
@@ -125,16 +122,13 @@ namespace Templater.Core.Implementations.dotsln
         /// </summary>
         /// <param name="directory">The directory.</param>
         /// <param name="options">The options.</param>
-        private void UpdateSolutions(string directory, PrepareOptions options)
+        private void UpdateSolutions(string directory, PrepareOptions options, Dictionary<string, string> guids)
         {
-            // Step 3a - Get the guids from the .SLN files...
-            var guids = GetGuids(directory);
-
-            // Step 3b - Create the replacement dictionaries...
+            // Step 4a - Create the replacement dictionaries...
             var slnReplacements = GetSolutionFileReplacements(guids, options);
             var otherReplacements = GetOtherFileReplacements(options);
 
-            // Step 3c - Update the all files
+            // Step 4b - Update the all files
             UpdateFiles(directory, slnReplacements, otherReplacements);
         }
 
@@ -165,7 +159,7 @@ namespace Templater.Core.Implementations.dotsln
             Dictionary<Regex, string> otherReplacements = new();
             for (var i = 0; i < REGEX_TAGS.Length; i++)
             {
-                otherReplacements.Add(new Regex($"<{REGEX_TAGS[i][0]}>.*<\\/{REGEX_TAGS[i][0]}>"), $"<{REGEX_TAGS[i][0]}>[{REGEX_TAGS[i][1].ToUpperInvariant()}]</{REGEX_TAGS[i][0]}>");
+                otherReplacements.Add(new Regex($"<{REGEX_TAGS[i][0]}>.*<\\/{REGEX_TAGS[i][0]}>"), $"<{REGEX_TAGS[i][0]}>{REGEX_TAGS[i][1]}</{REGEX_TAGS[i][0]}>");
             }
 
             foreach (var replacement in options.TemplateSettings.Settings.ReplacementText)
@@ -181,7 +175,7 @@ namespace Templater.Core.Implementations.dotsln
         /// </summary>
         /// <param name="directory">The directory.</param>
         /// <returns>All guids for all .sln files in the directory we're templating.</returns>
-        private Dictionary<string, string> GetGuids(string directory)
+        public Dictionary<string, string> GetGuids(string directory)
         {
             Dictionary<string, string> output = new();
 
@@ -201,7 +195,7 @@ namespace Templater.Core.Implementations.dotsln
                             var last = splitByComma[splitByComma.Length - 1];
 
                             var guid = last.Substring(3, last.Length - 5);
-                            output.Add(guid, $"GUID{output.Count.ToString(GUID_PADDING)}");
+                            output.Add(guid, $"GUID{output.Count.ToString(Constants.GUID_PADDING)}");
                         }
                     }
                 }
@@ -229,7 +223,7 @@ namespace Templater.Core.Implementations.dotsln
         /// <param name="otherReplacements">The other replacements.</param>
         private void UpdateFiles(string directory, Dictionary<string, string> slnReplacements, Dictionary<Regex, string> otherReplacements)
         {
-            var files = Directory.GetFiles(directory).Where(f => FILES_TO_UPDATE.Contains(Path.GetExtension(f))).ToList();
+            var files = Directory.GetFiles(directory).Where(f => FILES_TO_UPDATE.Contains(Path.GetExtension(f)) && Path.GetFileName(f) != Constants.TemplaterTemplatesInfoFileName).ToList();
 
             for (var i = 0; i < files.Count; i++)
             {

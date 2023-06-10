@@ -11,6 +11,9 @@ namespace Templater.Options
     [Verb("generate", HelpText = "Generate a project from a template")]
     internal class Generate : AbstractOption
     {
+        [Option('n', "name", Required = true, HelpText = "The name for the generated solution")]
+        public string Name { get; set; }
+
         [Option('t', "template", Required = true, HelpText = "The template to use")]
         public string Template { get; set; }
 
@@ -45,7 +48,7 @@ namespace Templater.Options
                 throw new Exception($"Template '{options.Template}' is not a valid template!");
             }
 
-            Console.WriteLine("Gathering solution configuration...");
+            Console.WriteLine($"Gathering solution configuration for new solution '{options.Name}'...");
 
             // determine if we need to load an existing config file...
             string solutionConfig = "";
@@ -62,20 +65,30 @@ namespace Templater.Options
 
             // load or initialize
             var generateOptions = new GenerateOptions() {
+                SolutionName = options.Name,
                 SolutionConfigFile = solutionConfig,
                 CleanSolutionConfigFile = cleanupSolutionConfigFile,
                 Directory = options.OutputDirectory,
-                SolutionSettings = null
+                SolutionSettings = null,
+                Template = template
             };
 
             if (File.Exists(solutionConfig))
             {
                 Console.WriteLine($"Loading solution config file: {solutionConfig}");
-                generateOptions.SolutionSettings = JsonConvert.DeserializeObject<SolutionSettings>(solutionConfig);
+                try
+                {
+                    generateOptions.SolutionSettings = JsonConvert.DeserializeObject<SolutionSettings>(solutionConfig);
+                }
+                catch
+                {
+                    Console.WriteLine($"Unable to load config file: {solutionConfig}");
+                    generateOptions.SolutionSettings = null;
+                }
             }
 
             // Display settings and ask for confirmation
-            generateOptions.SolutionSettings = SetSolutionConfiguration(generateOptions.SolutionSettings);
+            SetSolutionConfiguration(generateOptions);
 
             // Save the solution config for later use or documentation if needed
             var saveFileContents = JsonConvert.SerializeObject(generateOptions.SolutionSettings, Formatting.Indented);
@@ -96,8 +109,9 @@ namespace Templater.Options
             }
         }
 
-        private SolutionSettings SetSolutionConfiguration(SolutionSettings solutionSettings)
+        private void SetSolutionConfiguration(GenerateOptions options)
         {
+            var solutionSettings = options.SolutionSettings;
             // if we have existing config, ask if it is fine...
             if (solutionSettings != null)
             {
@@ -105,7 +119,7 @@ namespace Templater.Options
                 var result = ConsoleHelpers.GetYesNo($"Do the settings look correct?{Environment.NewLine}{firstSettings}{Environment.NewLine}");
                 if (result)
                 {
-                    return solutionSettings;
+                    return;
                 }
             }
 
@@ -124,27 +138,43 @@ namespace Templater.Options
             do
             {
                 // go through each main option and ask about it
-                solutionSettings.Name = ConsoleHelpers.GetInput($"Solution Name", solutionSettings.Name ?? string.Empty);
+                solutionSettings.Author = ConsoleHelpers.GetInput($"Solution Author", solutionSettings.Author ?? options.UpdateTextWithReplacements(options.Template.Settings.DefaultAuthor));
 
-                solutionSettings.Author = ConsoleHelpers.GetInput($"Solution Author", solutionSettings.Author ?? string.Empty);
+                solutionSettings.Description = ConsoleHelpers.GetInput($"Solution Description", solutionSettings.Description ?? options.UpdateTextWithReplacements(options.Template.Settings.DefaultDescription));
 
-                solutionSettings.Description = ConsoleHelpers.GetInput($"Solution Description", solutionSettings.Description ?? string.Empty);
-
-                solutionSettings.Version = ConsoleHelpers.GetInput($"Solution Starting Version", solutionSettings.Version ?? string.Empty);
+                solutionSettings.Version = ConsoleHelpers.GetInput($"Solution Starting Version", solutionSettings.Version ?? "1.0.0");
 
                 // nuget settings
-                solutionSettings.Tags = ConsoleHelpers.GetInput("Solution Tags (comma-separated)", string.Join(",", solutionSettings.Tags) ?? string.Empty).Split(",").ToList();
+                var tags = "";
+                if (solutionSettings.Tags != null)
+                {
+                    tags = string.Join(",", solutionSettings.Tags);
+                }
+                else
+                {
+                    tags = options.Template.Settings.NugetSettings.DefaultNugetTags;
+                }
+                tags = options.UpdateTextWithReplacements(tags);
+                solutionSettings.Tags = ConsoleHelpers.GetInput("Solution Tags (comma-separated)", string.Join(",", tags)).Split(",").ToList();
 
-                solutionSettings.LicenseExpresion = ConsoleHelpers.GetInput($"Solution LicenseExpresion", solutionSettings.LicenseExpresion ?? string.Empty);
+                solutionSettings.LicenseExpresion = ConsoleHelpers.GetInput($"Solution LicenseExpresion", solutionSettings.LicenseExpresion ?? options.Template.Settings.NugetSettings.DefaultNugetLicense);
 
                 // go through each git option and ask about it
+                solutionSettings.GitSettings.RepoMode = ConsoleHelpers.GetInputForEnum<GitRepoMode>($"Git Repo Mode", solutionSettings.GitSettings.RepoMode.ToString() ?? Constants.DefaultGitRepoMode.ToString());
+                if (solutionSettings.GitSettings.RepoMode == GitRepoMode.NewRepoFull)
+                {
+                    solutionSettings.GitSettings.RepoOwner = ConsoleHelpers.GetInput($"Git Repo Owner", solutionSettings.GitSettings.RepoOwner ?? string.Empty);
 
+                    solutionSettings.GitSettings.RepoName = ConsoleHelpers.GetInput($"Git Repo Name", solutionSettings.GitSettings.RepoName ?? Name.Replace(" ", "-"));
+
+                    solutionSettings.GitSettings.IsPrivate = ConsoleHelpers.GetYesNo("Git Repo Private");
+                }
 
                 // serialize for display
                 settings = JsonConvert.SerializeObject(solutionSettings, Formatting.Indented);
             } while (!ConsoleHelpers.GetYesNo($"Do the settings look correct?{Environment.NewLine}{settings}{Environment.NewLine}"));
 
-            return solutionSettings;
+            options.SolutionSettings = solutionSettings;
         }
     }
 }

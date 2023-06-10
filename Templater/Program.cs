@@ -12,7 +12,29 @@ namespace Templater
         /// <param name="args">The arguments.</param>
         private static void Main(string[] args)
         {
-            /* Example args:
+            /* Templates
+             *  Velentr.BASE
+             *  Velentr.DUAL_SUPPORT
+             *  Velentr.DUAL_SUPPORT_WITH_GENERIC
+             * 
+             * 
+             * Example args:
+             * args = new string[] { "generate", "-n", "TEST_BASE", "-t", "Velentr.BASE", "-o", @"C:\Users\ricky\OneDrive\Computer\Documents\Templater\tmp" };
+             *        Prepares the specified template solution
+             *        
+             * 
+             * 
+             * 
+             * args = new string[] { "prepare", "-d", @"C:\Users\ricky\Dropbox\Projects\Templater-Templates\TEMPLATES_BASE\Velentr.BASE", "-o", @"C:\Users\ricky\Dropbox\Projects\Templater-Templates\TEMPLATES" };
+             *        Prepares the specified template solution
+             * 
+             * args = new string[] { "prepare", "-d", @"C:\Users\ricky\Dropbox\Projects\Templater-Templates\TEMPLATES_BASE\Velentr.DUAL_SUPPORT", "-o", @"C:\Users\ricky\Dropbox\Projects\Templater-Templates\TEMPLATES" };
+             *        Prepares the specified template solution
+             * 
+             * args = new string[] { "prepare", "-d", @"C:\Users\ricky\Dropbox\Projects\Templater-Templates\TEMPLATES_BASE\Velentr.DUAL_SUPPORT_WITH_GENERIC", "-o", @"C:\Users\ricky\Dropbox\Projects\Templater-Templates\TEMPLATES" };
+             *        Prepares the specified template solution
+             *        
+             * 
              * args = new string[] { "prepare", "-d", @"C:\Users\ricky\Dropbox\Projects\Templater-Templates\TEMPLATES_BASE\Velentr.BASE", "-o", @"C:\Users\ricky\Dropbox\Projects\Templater-Templates\TEMPLATES" };
              *        Prepares the specified template solution
              * 
@@ -48,7 +70,7 @@ namespace Templater
              * args = new string[] { "--help" };
              *        Gets help!
             */
-            args = new string[] { "prepare", "-d", @"C:\Users\ricky\Dropbox\Projects\Templater-Templates\TEMPLATES_BASE\Velentr.BASE", "-o", @"C:\Users\ricky\Dropbox\Projects\Templater-Templates\TEMPLATES", "-s" };
+            args = new string[] { "generate", "-n", "TEST_BASE", "-t", "Velentr.BASE", "-o", @"C:\Users\ricky\OneDrive\Computer\Documents\Templater\tmp" };
 
             // Ask for configuration if it doesn't exist
             if (!Core.Templater.Instance.ValidateConfiguration())

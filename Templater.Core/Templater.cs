@@ -1,8 +1,12 @@
-﻿using ICSharpCode.SharpZipLib.Zip;
+﻿using ICSharpCode.SharpZipLib.Core;
+using ICSharpCode.SharpZipLib.Zip;
 using Newtonsoft.Json;
 using Octokit;
+using System.Text;
+using System.Text.RegularExpressions;
 using Templater.Core.Implementations.dotsln;
 using Templater.Core.Repositories;
+using Templater.Core.Template;
 using FileMode = System.IO.FileMode;
 
 namespace Templater.Core
@@ -36,6 +40,11 @@ namespace Templater.Core
         /// The templates
         /// </summary>
         public List<Template.Template> Templates = new();
+
+        /// <summary>
+        /// The template unique identifier counts
+        /// </summary>
+        public Dictionary<string, int> TemplateGuidCounts = new();
 
         /// <summary>
         /// Gets the templates map.
@@ -202,7 +211,7 @@ namespace Templater.Core
         /// <summary>
         /// Updates the templates.
         /// </summary>
-        public (int, int, int, int) UpdateTemplates(bool forceUpdate = false)
+        public (int, int, int, int, List<string>) UpdateTemplates(bool forceUpdate = false)
         {
             var remoteTemplates = new TemplateInfoList();
 
@@ -279,6 +288,7 @@ namespace Templater.Core
                             {
                                 oldTemplate.SHA = template.SHA;
                                 totalUpdated++;
+                                break;
                             }
                         }
                     }
@@ -298,7 +308,14 @@ namespace Templater.Core
             // Load the templates
             RefreshLocalTemplatesList();
 
-            return (localTemplates.Templates.Count, remoteTemplates.Templates.Count, totalNew, totalUpdated);
+            // find orphaned templates and return info
+            var orphanedTemplates = localTemplates.Templates.Where(t => !remoteTemplates.TemplateMap.ContainsKey(t.Name)).Select(t => t.Name).ToList();
+            if (orphanedTemplates == null)
+            {
+                orphanedTemplates = new List<string>();
+            }
+
+            return (localTemplates.Templates.Count, remoteTemplates.Templates.Count, totalNew, totalUpdated, orphanedTemplates);
         }
 
         public void RefreshLocalTemplatesList()
@@ -319,13 +336,52 @@ namespace Templater.Core
 
             // go through each template in the templates directory...
             var templates = Directory.GetFiles(TemplatesDirectory, $"*.{Constants.TemplateFileType}");
+            if (templates == null)
+            {
+                return;
+            }
+
             foreach (var file in templates)
             {
                 var fileName = Path.GetFileName(file);
                 var repoMeta = localTemplates.TemplateMap.ContainsKey(fileName) ? localTemplates.TemplateMap[fileName] : null;
                 var template = new Template.Template(file, repoMeta);
+                TemplateGuidCounts[template.Name] = GetGuidCount(file);
+
                 Templates.Add(template);
             }
+        }
+
+        private static int GetGuidCount(string file)
+        {
+            var count = -1;
+            using (var fileStream = File.OpenRead(file))
+            {
+                using (var zip = new ZipFile(fileStream))
+                {
+                    foreach (ZipEntry entry in zip)
+                    {
+                        if (Path.GetFileName(entry.Name) == Constants.TemplaterTemplatesInfoFileName)
+                        {
+                            var contents = "";
+                            using (var inputStream = zip.GetInputStream(entry))
+                            {
+                                using (var output = new MemoryStream())
+                                {
+                                    var buffer = new byte[4096];
+                                    StreamUtils.Copy(inputStream, output, buffer);
+                                    contents = Encoding.UTF8.GetString(output.ToArray());
+                                }
+                            }
+
+                            var templateWithGuid = JsonConvert.DeserializeObject<Template.TemplateWithGuids>(contents);
+                            count = templateWithGuid.GuidsCount;
+                            break;
+                        }
+                    }
+                }
+            }
+            return count;
         }
 
         /// <summary>

@@ -143,10 +143,11 @@ namespace Templater.Options
                 template.Version = ConsoleHelpers.GetInput($"Template Description", template.Version ?? string.Empty);
 
                 // go through each settings option and ask about it
-                template.Settings.DefaultAuthor = ConsoleHelpers.GetInput($"Default Author (special values: <CurrentFullName>)", template.Settings.DefaultAuthor ?? string.Empty);
-                template.Settings.DefaultCompanyName = ConsoleHelpers.GetInput($"Default Company (special values: <CurrentFullName>)", template.Settings.DefaultCompanyName ?? string.Empty);
+                Console.WriteLine("Special Text: <CurrentFullName>, <ParentDir>, <ProjectName>");
+                template.Settings.DefaultAuthor = ConsoleHelpers.GetInput($"Default Author", template.Settings.DefaultAuthor ?? string.Empty);
+                template.Settings.DefaultCompanyName = ConsoleHelpers.GetInput($"Default Company", template.Settings.DefaultCompanyName ?? string.Empty);
                 template.Settings.DefaultSolutionName = ConsoleHelpers.GetInput($"Default Solution Name", template.Settings.DefaultSolutionName ?? string.Empty);
-                template.Settings.DefaultSolutionNameFormat = ConsoleHelpers.GetInput($"Default Solution Name Format (special values: <CurrentFullName>, <ParentDir>)", template.Settings.DefaultSolutionNameFormat ?? string.Empty);
+                template.Settings.DefaultSolutionNameFormat = ConsoleHelpers.GetInput($"Default Solution Name Format", template.Settings.DefaultSolutionNameFormat ?? string.Empty);
                 template.Settings.DefaultDescription = ConsoleHelpers.GetInput($"Default Description", template.Settings.DefaultDescription ?? string.Empty);
                 template.Settings.RenameOnlyFilesAndDirectories = ConsoleHelpers.GetInput("Rename-only Files and Directories (comma-separated)", string.Join(",", template.Settings.RenameOnlyFilesAndDirectories) ?? string.Empty).Split(",").ToList();
 
