@@ -43,14 +43,7 @@ namespace Templater.Core
         /// </summary>
         /// <param name="options">The options.</param>
         /// <returns>The preperation result.</returns>
-        public abstract string Prepare(PrepareOptions options);
-
-        /// <summary>
-        /// Generates a solution from a template.
-        /// </summary>
-        /// <param name="options">The options.</param>
-        /// <returns>The generation result.</returns>
-        public abstract string Generate(GenerateOptions options);
+        public abstract string Prepare(PrepareOptions options, Func<string, bool> log);
 
         /// <summary>
         /// Copies a directory.

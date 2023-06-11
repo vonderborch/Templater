@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Templater.Core.Solution;
 
 namespace Templater.Core
@@ -14,6 +13,8 @@ namespace Templater.Core
         public string SolutionName;
 
         public bool CleanSolutionConfigFile;
+
+        public bool OverrideExistingDirectory;
 
         public string Directory;
 

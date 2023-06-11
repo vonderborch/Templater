@@ -1,5 +1,4 @@
-﻿using Octokit;
-using Templater.Core.Solution;
+﻿using Templater.Core.Solution;
 
 namespace Templater.Core
 {
@@ -118,5 +117,15 @@ namespace Templater.Core
         /// The default git repo mode
         /// </summary>
         public static GitRepoMode DefaultGitRepoMode = GitRepoMode.NoRepo;
+
+        /// <summary>
+        /// The command prompt
+        /// </summary>
+        public static string CommandPrompt = "CMD.exe";
+
+        /// <summary>
+        /// The excluded files
+        /// </summary>
+        public static readonly string[] ExcludedGenerateFiles = { Constants.TemplaterTemplatesInfoFileName };
     }
 }

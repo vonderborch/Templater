@@ -2,11 +2,10 @@
 using ICSharpCode.SharpZipLib.Zip;
 using Newtonsoft.Json;
 using Octokit;
+using System.Diagnostics;
 using System.Text;
-using System.Text.RegularExpressions;
 using Templater.Core.Implementations.dotsln;
 using Templater.Core.Repositories;
-using Templater.Core.Template;
 using FileMode = System.IO.FileMode;
 
 namespace Templater.Core
@@ -34,7 +33,8 @@ namespace Templater.Core
         /// <value>
         /// The instance.
         /// </value>
-        public static Templater Instance { get { return lazy.Value; } }
+        public static Templater Instance
+        { get { return lazy.Value; } }
 
         /// <summary>
         /// The templates
@@ -192,17 +192,310 @@ namespace Templater.Core
         }
 
         /// <summary>
+        /// Generates the specified options.
+        /// </summary>
+        /// <param name="options">The options.</param>
+        /// <param name="type">The type.</param>
+        /// <returns></returns>
+        /// <exception cref="System.NotImplementedException">Type {type} not implemented!</exception>
+        public string Generate(GenerateOptions options, Func<string, bool> log, Func<string, bool> instructionLog, Func<string, bool> commandLog)
+        {
+            var startTime = DateTime.Now;
+            var directoryName = options.SolutionName;
+            var actualDirectory = Path.Combine(options.Directory, directoryName);
+
+            // Step 1 - Check if the directory exists and raise an error if it does. Or delete if we're allowed to
+            log($"Checking if the new solution directory '{actualDirectory}' already exists...");
+            if (Directory.Exists(actualDirectory))
+            {
+                if (options.OverrideExistingDirectory)
+                {
+                    log("  Deleting existing directory...");
+                    Directory.Delete(actualDirectory, true);
+                    log("  Existing directory deleted!");
+                }
+                else
+                {
+                    throw new Exception($"Directory {actualDirectory} already exists. Please delete it or use the override option.");
+                }
+            }
+
+            // Step 2 - Git
+            if (options.SolutionSettings.GitSettings.RepoMode != Solution.GitRepoMode.NoRepo)
+            {
+                var gitUrl = $"https://github.com/{options.SolutionSettings.GitSettings.RepoOwner}/{options.SolutionSettings.GitSettings.RepoName}.git";
+                switch (options.SolutionSettings.GitSettings.RepoMode)
+                {
+                    case Solution.GitRepoMode.NewRepoOnlyInit:
+                        log($"Initializing Git Repo at destination directory '{actualDirectory}' ...");
+                        Directory.CreateDirectory(actualDirectory);
+                        LibGit2Sharp.Repository.Init(actualDirectory);
+                        log("  Directory initialized!");
+                        break;
+
+                    case Solution.GitRepoMode.NewRepoFull:
+                        log($"Creating git repo: {gitUrl} ...");
+                        var repository = new NewRepository(options.SolutionSettings.GitSettings.RepoName)
+                        {
+                            AutoInit = false,
+                            Description = options.SolutionSettings.Description,
+                            LicenseTemplate = options.SolutionSettings.LicenseExpresion,
+                            Private = options.SolutionSettings.GitSettings.IsPrivate,
+                        };
+
+                        var context = Templater.Instance.GitClient.Repository.Create(repository);
+                        log("  Git repo created! Cloning repo...");
+                        LibGit2Sharp.Repository.Clone(gitUrl, Path.GetDirectoryName(actualDirectory));
+                        actualDirectory = Path.Combine(options.Directory, options.SolutionSettings.GitSettings.RepoName);
+                        log($"  Repo cloned to '{actualDirectory}'");
+                        break;
+                }
+            }
+            else
+            {
+                log($"Creating destination directory '{actualDirectory}' ...");
+                Directory.CreateDirectory(actualDirectory);
+                log("  Directory created!");
+            }
+
+            // Step 3 - Unzip the template
+            log($"Unzipping template '{options.Template.Name}' ...");
+            UnzipTemplate(actualDirectory, options.Template);
+            log("  Template unzipped!");
+
+            // Step 4 - Update the files
+            log("Updating template files for solution...");
+            UpdateFiles(actualDirectory, options);
+            log("  Files updated!!");
+
+            // Step 5 - Run commands (if possible)
+            if (options.Template.Settings.Commands.Count == 0)
+            {
+                log("No commands to run, skipping step!");
+            }
+            else
+            {
+                log("Running commands...");
+                var cmdStart = $"/C cd \"{actualDirectory}\"";
+                var i = 0;
+                try
+                {
+                    for (i = 0; i < options.Template.Settings.Commands.Count; i++)
+                    {
+                        log($"  Running command {i + 1}/{options.Template.Settings.Commands.Count}...");
+                        commandLog("Executing command {i + 1}/{.Template.Settings.Commands.Count}: {options.Template.Settings.Commands[i]}");
+                        var cmd = Process.Start(Constants.CommandPrompt, $"{cmdStart} & {options.Template.Settings.Commands[i]}");
+                        cmd.WaitForExit();
+                    }
+                    log("  All commands completed!");
+                }
+                catch (Exception ex)
+                {
+                    log($"  Failed running command {i + 1}, skipping remaining commands. Please execute the below when manually:");
+                    instructionLog("Failed running command {i + 1}, skipping remaining commands. Please execute the below when manually:");
+                    for (_ = i; i < options.Template.Settings.Commands.Count; i++)
+                    {
+                        log($"    {cmdStart} & {options.Template.Settings.Commands[i]}");
+                        instructionLog($"  {cmdStart} & {options.Template.Settings.Commands[i]}");
+                    }
+                }
+            }
+
+            // Step 6 - Cleanup after ourselves
+            if (options.Template.Settings.CleanupFilesAndDirectories.Count == 0)
+            {
+                log("Nothing to cleanup, skipping step!");
+            }
+            else
+            {
+                log("Cleaning up...");
+                var filesDeleted = 0;
+                var directoriesDeleted = 0;
+                for (var i = 0; i < options.Template.Settings.CleanupFilesAndDirectories.Count; i++)
+                {
+                    if (Directory.Exists(options.Template.Settings.CleanupFilesAndDirectories[i]))
+                    {
+                        directoriesDeleted++;
+                        Directory.Delete(options.Template.Settings.CleanupFilesAndDirectories[i], true);
+                    }
+                    else
+                    {
+                        filesDeleted++;
+                        File.Delete(options.Template.Settings.CleanupFilesAndDirectories[i]);
+                    }
+                }
+                log($"  Cleaned up '{filesDeleted}' file(s) and '{directoriesDeleted}' directories!");
+            }
+
+            // Step 7 - Display Instructions
+            if (options.Template.Settings.Instructions.Count == 0)
+            {
+                log("No instructions, skipping step!");
+            }
+            else
+            {
+                log("Printing instructions...");
+                var instructions = new StringBuilder();
+                for (var i = 0; i < options.Template.Settings.Instructions.Count; i++)
+                {
+                    instructions.AppendLine(options.Template.Settings.Instructions[i]);
+                }
+                instructionLog(instructions.ToString());
+                log("  Instructions printed!");
+            }
+
+            // Step 8 - Cleanup the solution_config.json file
+            if (!options.CleanSolutionConfigFile)
+            {
+                log($"Skipping clean up of {Constants.TemplaterSolutionConfigFileName}");
+            }
+            else
+            {
+                log($"Cleaning up {Constants.TemplaterSolutionConfigFileName}...");
+                if (!Directory.Exists(TemplaterSolutionConfigurationBackupDirectory))
+                {
+                    Directory.CreateDirectory(TemplaterSolutionConfigurationBackupDirectory);
+                }
+
+                string backupFile = string.Empty;
+                do
+                {
+                    var backupFileName = $"{options.SolutionName.Replace(" ", "-")}_{startTime.ToString("yyyyMMddHHmmss")}.json";
+                    backupFile = Path.Combine(TemplaterSolutionConfigurationBackupDirectory, backupFileName);
+                } while (File.Exists(backupFile));
+                File.Move(options.SolutionConfigFile, backupFile);
+                log($"  Solution config file backed up to: {backupFile}");
+            }
+
+            // Done!
+            log("Work complete!");
+            var totalTime = DateTime.Now - startTime;
+            return $"Successfully prepared created the solution in {totalTime.TotalSeconds.ToString("0.00")} second(s): {actualDirectory}";
+        }
+
+        /// <summary>
+        /// Unzips the template.
+        /// </summary>
+        /// <param name="outputDirectory">The output directory.</param>
+        /// <param name="template">The template.</param>
+        /// <returns></returns>
+        private void UnzipTemplate(string outputDirectory, Template.Template template)
+        {
+            using (var file = File.OpenRead(template.FilePath))
+            {
+                using (var zip = new ZipFile(file))
+                {
+                    foreach (ZipEntry entry in zip)
+                    {
+                        var path = Path.Combine(outputDirectory, entry.Name.Replace("/", "\\"));
+                        var directoryPath = Path.GetDirectoryName(path);
+                        if (!string.IsNullOrWhiteSpace(path))
+                        {
+                            if (entry.IsDirectory)
+                            {
+                                Directory.CreateDirectory(path);
+                            }
+                            else
+                            {
+                                if (Constants.ExcludedGenerateFiles.Contains(Path.GetFileName(entry.Name)))
+                                {
+                                    continue;
+                                }
+
+                                if (directoryPath is { Length: > 0 })
+                                {
+                                    Directory.CreateDirectory(directoryPath);
+                                }
+
+                                var buffer = new byte[4096];
+                                if (File.Exists(path))
+                                {
+                                    File.Delete(path);
+                                }
+
+                                using (var inputStream = zip.GetInputStream(entry))
+                                {
+                                    using (var output = File.Create(path))
+                                    {
+                                        StreamUtils.Copy(inputStream, output, buffer);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Updates the files.
+        /// </summary>
+        /// <param name="directory">The directory.</param>
+        /// <param name="options">The options.</param>
+        /// <returns></returns>
+        private void UpdateFiles(string directory, GenerateOptions options)
+        {
+            var entries = Directory.GetFileSystemEntries(directory);
+            foreach (var entry in entries)
+            {
+                // skip the .git directory
+                if (entry == ".git")
+                {
+                    continue;
+                }
+
+                var newEntryPath = options.UpdateTextWithReplacements(entry);
+
+                // Update directory naming
+                if (Directory.Exists(entry))
+                {
+                    var path = entry;
+                    if (entry != newEntryPath)
+                    {
+                        Directory.Move(entry, newEntryPath);
+                        path = newEntryPath;
+                    }
+
+                    if (!options.Template.Settings.RenameOnlyFilesAndDirectories.Contains(Path.GetFileName(entry)))
+                    {
+                        UpdateFiles(path, options);
+                    }
+                }
+                // update files as needed
+                else
+                {
+                    if (entry != newEntryPath)
+                    {
+                        if (File.Exists(newEntryPath))
+                        {
+                            File.Delete(newEntryPath);
+                        }
+
+                        File.Move(entry, newEntryPath);
+                    }
+
+                    if (!options.Template.Settings.RenameOnlyFilesAndDirectories.Contains(Path.GetFileName(newEntryPath)))
+                    {
+                        var text = File.ReadAllText(newEntryPath);
+                        text = options.UpdateTextWithReplacements(text);
+                        File.WriteAllText(newEntryPath, text);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// Prepares the specified options.
         /// </summary>
         /// <param name="options">The options.</param>
         /// <param name="type">The type.</param>
         /// <returns></returns>
         /// <exception cref="System.NotImplementedException">Type {type} not implemented!</exception>
-        public string Prepare(PrepareOptions options, string type)
+        public string Prepare(PrepareOptions options, string type, Func<string, bool> log)
         {
             if (TemplaterMap.TryGetValue(type, out var templater))
             {
-                return templater.Prepare(options);
+                return templater.Prepare(options, log);
             }
 
             throw new NotImplementedException($"Type {type} not implemented!");
@@ -220,7 +513,7 @@ namespace Templater.Core
             {
                 if (Directory.Exists(TemplatesDirectory))
                 {
-                    Directory.Delete(TemplatesDirectory, true );
+                    Directory.Delete(TemplatesDirectory, true);
                 }
                 if (File.Exists(TemplatesCacheFileName))
                 {

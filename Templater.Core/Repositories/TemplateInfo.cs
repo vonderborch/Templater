@@ -10,14 +10,17 @@ namespace Templater.Core.Repositories
         /// The name
         /// </summary>
         public string Name;
+
         /// <summary>
         /// The sha
         /// </summary>
         public string SHA;
+
         /// <summary>
         /// The URL
         /// </summary>
         public string Url;
+
         /// <summary>
         /// The repo
         /// </summary>

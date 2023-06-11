@@ -1,9 +1,7 @@
 ﻿using CommandLine;
 using Newtonsoft.Json;
-using Octokit;
 using Templater.Core;
 using Templater.Core.Solution;
-using Templater.Core.Template;
 using Templater.Helpers;
 
 namespace Templater.Options
@@ -22,6 +20,9 @@ namespace Templater.Options
 
         [Option('c', "solution-config", Required = false, HelpText = "The specific solution config file to use.")]
         public string SolutionConfig { get; set; } = "";
+
+        [Option('f', "force", Required = false, Default = false, HelpText = "Overrides the existing directory if it already exists.")]
+        public bool Force { get; set; }
 
         [Option('i', "what-if", Required = false, Default = false, HelpText = "If flag is provided, the solution will not be generated, but the user will be guided through all settings.")]
         public bool WhatIf { get; set; }
@@ -64,11 +65,13 @@ namespace Templater.Options
             }
 
             // load or initialize
-            var generateOptions = new GenerateOptions() {
+            var generateOptions = new GenerateOptions()
+            {
                 SolutionName = options.Name,
                 SolutionConfigFile = solutionConfig,
                 CleanSolutionConfigFile = cleanupSolutionConfigFile,
                 Directory = options.OutputDirectory,
+                OverrideExistingDirectory = options.Force,
                 SolutionSettings = null,
                 Template = template
             };
@@ -78,7 +81,7 @@ namespace Templater.Options
                 Console.WriteLine($"Loading solution config file: {solutionConfig}");
                 try
                 {
-                    generateOptions.SolutionSettings = JsonConvert.DeserializeObject<SolutionSettings>(solutionConfig);
+                    generateOptions.SolutionSettings = JsonConvert.DeserializeObject<SolutionSettings>(File.ReadAllText(solutionConfig));
                 }
                 catch
                 {
@@ -97,8 +100,10 @@ namespace Templater.Options
             if (!options.WhatIf)
             {
                 // generate solution...
-
-                return "Success";
+                Console.WriteLine($"Generating solution '{generateOptions.SolutionName}' using template '{generateOptions.Template.Name}'...");
+                var result = Core.Templater.Instance.Generate(generateOptions, LogMessage, LogMessage, DoNothing);
+                Console.WriteLine(result);
+                return result;
             }
             else
             {
@@ -109,6 +114,31 @@ namespace Templater.Options
             }
         }
 
+        /// <summary>
+        /// Logs the message.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <returns></returns>
+        private bool LogMessage(string value)
+        {
+            Console.WriteLine(value);
+            return true;
+        }
+
+        /// <summary>
+        /// Do Nothing.
+        /// </summary>
+        /// <param name="_">The .</param>
+        /// <returns></returns>
+        private bool DoNothing(string _)
+        {
+            return true;
+        }
+
+        /// <summary>
+        /// Sets the solution configuration.
+        /// </summary>
+        /// <param name="options">The options.</param>
         private void SetSolutionConfiguration(GenerateOptions options)
         {
             var solutionSettings = options.SolutionSettings;
@@ -155,19 +185,20 @@ namespace Templater.Options
                     tags = options.Template.Settings.NugetSettings.DefaultNugetTags;
                 }
                 tags = options.UpdateTextWithReplacements(tags);
-                solutionSettings.Tags = ConsoleHelpers.GetInput("Solution Tags (comma-separated)", string.Join(",", tags)).Split(",").ToList();
+                solutionSettings.Tags = ConsoleHelpers.GetInput("Solution Tags (comma-separated)", string.Join(",", tags)).Split(",").ToArray();
+                solutionSettings.Tags = solutionSettings.Tags.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
 
                 solutionSettings.LicenseExpresion = ConsoleHelpers.GetInput($"Solution LicenseExpresion", solutionSettings.LicenseExpresion ?? options.Template.Settings.NugetSettings.DefaultNugetLicense);
 
                 // go through each git option and ask about it
-                solutionSettings.GitSettings.RepoMode = ConsoleHelpers.GetInputForEnum<GitRepoMode>($"Git Repo Mode", solutionSettings.GitSettings.RepoMode.ToString() ?? Constants.DefaultGitRepoMode.ToString());
+                solutionSettings.GitSettings.RepoMode = ConsoleHelpers.GetInputForEnum<GitRepoMode>($"Git Repo Mode", solutionSettings.GitSettings.RepoMode.ToString());
                 if (solutionSettings.GitSettings.RepoMode == GitRepoMode.NewRepoFull)
                 {
                     solutionSettings.GitSettings.RepoOwner = ConsoleHelpers.GetInput($"Git Repo Owner", solutionSettings.GitSettings.RepoOwner ?? string.Empty);
 
-                    solutionSettings.GitSettings.RepoName = ConsoleHelpers.GetInput($"Git Repo Name", solutionSettings.GitSettings.RepoName ?? Name.Replace(" ", "-"));
+                    solutionSettings.GitSettings.RepoName = ConsoleHelpers.GetInput($"Git Repo Name", solutionSettings.GitSettings.RepoName ?? Name.Replace(" ", "-")).Replace(" ", "-");
 
-                    solutionSettings.GitSettings.IsPrivate = ConsoleHelpers.GetYesNo("Git Repo Private");
+                    solutionSettings.GitSettings.IsPrivate = ConsoleHelpers.GetYesNo("Git Repo Private", solutionSettings.GitSettings.IsPrivate);
                 }
 
                 // serialize for display

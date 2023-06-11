@@ -66,53 +66,54 @@ namespace Templater.Core.Implementations.dotsln
         }
 
         /// <summary>
-        /// Generates a solution from a template.
-        /// </summary>
-        /// <param name="options">The options.</param>
-        /// <returns>
-        /// The generation result.
-        /// </returns>
-        /// <exception cref="System.NotImplementedException"></exception>
-        public override string Generate(GenerateOptions options)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
         /// Prepares the template.
         /// </summary>
         /// <param name="options">The options.</param>
         /// <returns>
         /// The preperation result.
         /// </returns>
-        public override string Prepare(PrepareOptions options)
+        public override string Prepare(PrepareOptions options, Func<string, bool> log)
         {
             var startTime = DateTime.Now;
             var directoryName = options.TemplateSettings.Name.Replace(" ", "_");
             var actualDirectory = Path.Combine(options.OutputDirectory, directoryName);
 
             // Step 1 - Delete the working directory if it already exists
+            log($"Checking if working directory '{actualDirectory}' exists...");
             if (Directory.Exists(actualDirectory))
             {
+                log("  Deleting existing directory...");
                 Directory.Delete(actualDirectory, true);
+                log("  Directory deleted!");
             }
 
             // Step 2 - Copy the source directory to the working directory
+            log($"Copying base solution '{options.Directory}' to working direcotry '{actualDirectory}'...");
             CopyDirectory(options.Directory, actualDirectory, options.TemplateSettings.Settings.DirectoriesExcludedInPrepare);
+            log("  Base solution copied!");
 
             // Step 3 - Get Guids and Update template_info.json
+            log("Getting GUIDs in solution...");
             var guids = GetGuids(actualDirectory);
+            log($"  Found {guids.Count} GUIDs!");
+            log($"  Updating template '{Constants.TemplaterTemplatesInfoFileName}' file with GUID count...");
             var templateInfo = JsonConvert.DeserializeObject<Template.TemplateWithGuids>(File.ReadAllText(Path.Combine(actualDirectory, Constants.TemplaterTemplatesInfoFileName)));
             templateInfo.GuidsCount = guids.Count;
             File.WriteAllText(Path.Combine(actualDirectory, Constants.TemplaterTemplatesInfoFileName), JsonConvert.SerializeObject(templateInfo, Formatting.Indented));
+            log($"  Template '{Constants.TemplaterTemplatesInfoFileName}' file updated!");
 
             // Step 4 - Update any solutions in the working directory
+            log("Updating template with generic replacement text...");
             UpdateSolutions(actualDirectory, options, guids);
+            log("  Template updated!");
 
             // Step 5 - Archive the Directory and Delete the working directory
+            log("Packaging template...");
             var archivePath = Path.Combine(options.OutputDirectory, $"{directoryName}.zip");
             ArchiveDirectory(actualDirectory, archivePath, options.SkipCleaning);
+            log("  Template packaged!");
 
+            log("Work complete!");
             var totalTime = DateTime.Now - startTime;
             return $"Successfully prepared the template in {totalTime.TotalSeconds.ToString("0.00")} second(s): {archivePath}";
         }

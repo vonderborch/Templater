@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-
-namespace Templater.Helpers
+﻿namespace Templater.Helpers
 {
     internal static class ConsoleHelpers
     {
@@ -20,6 +17,7 @@ namespace Templater.Helpers
             var defaultReturn = defaultValue == string.Empty ? defaultDisplayValue : defaultValue;
             return string.IsNullOrEmpty(input) ? defaultReturn : input;
         }
+
         /// <summary>
         /// Gets the input.
         /// </summary>

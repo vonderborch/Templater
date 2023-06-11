@@ -94,7 +94,7 @@ namespace Templater.Options
             if (!options.WhatIf)
             {
                 Console.WriteLine($"Preparing solution {prepareOptions.Directory} as {options.SolutionType}...");
-                var result = Core.Templater.Instance.Prepare(prepareOptions, options.SolutionType);
+                var result = Core.Templater.Instance.Prepare(prepareOptions, options.SolutionType, LogMessage);
                 Console.WriteLine(result);
                 return result;
             }
@@ -104,6 +104,12 @@ namespace Templater.Options
                 Console.WriteLine($"Template not prepared, but configuration settings saved: {templateInfoFileName}");
                 return "Success";
             }
+        }
+
+        private bool LogMessage(string value)
+        {
+            Console.WriteLine(value);
+            return true;
         }
 
         public Templater.Core.Template.Template SetTemplateOptions(Templater.Core.Template.Template template)
