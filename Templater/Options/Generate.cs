@@ -170,6 +170,8 @@ namespace Templater.Options
                 // go through each main option and ask about it
                 solutionSettings.Author = ConsoleHelpers.GetInput($"Solution Author", solutionSettings.Author ?? options.UpdateTextWithReplacements(options.Template.Settings.DefaultAuthor));
 
+                solutionSettings.Company = ConsoleHelpers.GetInput($"Solution Company", solutionSettings.Company ?? options.UpdateTextWithReplacements(options.Template.Settings.DefaultCompanyName));
+
                 solutionSettings.Description = ConsoleHelpers.GetInput($"Solution Description", solutionSettings.Description ?? options.UpdateTextWithReplacements(options.Template.Settings.DefaultDescription));
 
                 solutionSettings.Version = ConsoleHelpers.GetInput($"Solution Starting Version", solutionSettings.Version ?? "1.0.0");

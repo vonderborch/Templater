@@ -67,6 +67,24 @@ namespace Templater.Core
             }
         }
 
+        public void UpdateReplacementTextWithTags()
+        {
+            /* NOTE: Keep in sync with Constants.REGEX_TAGS
+             * 0 = Author
+             * 1 = Company
+             * 2 = Tags
+             * 3 = Description
+             * 4 = License
+             * 5 = Version
+             */
+            _replacementText.Add(Constants.REGEX_TAGS[0], SolutionSettings.Author);
+            _replacementText.Add(Constants.REGEX_TAGS[1], SolutionSettings.Company);
+            _replacementText.Add(Constants.REGEX_TAGS[2], string.Join(",", SolutionSettings.Tags));
+            _replacementText.Add(Constants.REGEX_TAGS[3], SolutionSettings.Description);
+            _replacementText.Add(Constants.REGEX_TAGS[4], SolutionSettings.LicenseExpresion);
+            _replacementText.Add(Constants.REGEX_TAGS[5], SolutionSettings.Version);
+        }
+
         public string UpdateTextWithReplacements(string value)
         {
             foreach (var pair in ReplacementsAndGuids)

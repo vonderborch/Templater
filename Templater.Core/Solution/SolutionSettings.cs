@@ -8,6 +8,11 @@
         public string Author;
 
         /// <summary>
+        /// The company
+        /// </summary>
+        public string Company;
+
+        /// <summary>
         /// The description
         /// </summary>
         public string Description;

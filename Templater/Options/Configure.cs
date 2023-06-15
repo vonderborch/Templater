@@ -26,7 +26,8 @@ namespace Templater.Options
 
             settings.GitAccessToken = ConsoleHelpers.GetInput("Git Personal Access Token", settings.GitAccessToken, settings.SecuredAccessToken);
 
-            var repositories = ConsoleHelpers.GetInput("Template repositories (comma separated)", settings.RepositoriesAsString);
+            var repos = !string.IsNullOrEmpty(settings.RepositoriesAsString) ? settings.RepositoriesAsString : Constants.DefaultTemplateRepository;
+            var repositories = ConsoleHelpers.GetInput("Template repositories (comma separated)", repos);
 
             settings.TemplateRepositories = repositories.Split(",").ToList();
 

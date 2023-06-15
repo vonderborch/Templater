@@ -16,6 +16,7 @@ namespace Templater.Core
 
         /// <summary>
         /// The regex tags
+        /// NOTE: Keep in sync with GenerateOptions().UpdateReplacementTextWithTags()
         /// </summary>
         public static readonly string[] REGEX_TAGS =
         {

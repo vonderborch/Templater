@@ -265,6 +265,7 @@ namespace Templater.Core
 
             // Step 4 - Update the files
             log("Updating template files for solution...");
+            options.UpdateReplacementTextWithTags();
             UpdateFiles(actualDirectory, options);
             log("  Files updated!!");
 
@@ -284,15 +285,17 @@ namespace Templater.Core
                     {
                         log($"  Running command {i + 1}/{options.Template.Settings.Commands.Count}...");
                         commandLog("Executing command {i + 1}/{.Template.Settings.Commands.Count}: {options.Template.Settings.Commands[i]}");
-                        var cmd = Process.Start(Constants.CommandPrompt, $"{cmdStart} & {options.Template.Settings.Commands[i]}");
-                        cmd.WaitForExit();
+                        RunCommand(actualDirectory, options.Template.Settings.Commands[i]);
                     }
                     log("  All commands completed!");
                 }
                 catch (Exception ex)
                 {
                     log($"  Failed running command {i + 1}, skipping remaining commands. Please execute the below when manually:");
-                    instructionLog("Failed running command {i + 1}, skipping remaining commands. Please execute the below when manually:");
+                    if (log != instructionLog)
+                    {
+                        instructionLog($"Failed running command {i + 1}, skipping remaining commands. Please execute the below when manually:");
+                    }
                     for (_ = i; i < options.Template.Settings.Commands.Count; i++)
                     {
                         log($"    {cmdStart} & {options.Template.Settings.Commands[i]}");
@@ -387,7 +390,7 @@ namespace Templater.Core
                 {
                     foreach (ZipEntry entry in zip)
                     {
-                        var path = Path.Combine(outputDirectory, entry.Name.Replace("/", "\\"));
+                        var path = Path.Combine(outputDirectory, entry.Name.Replace("/", Path.DirectorySeparatorChar.ToString()));
                         var directoryPath = Path.GetDirectoryName(path);
                         if (!string.IsNullOrWhiteSpace(path))
                         {
@@ -427,6 +430,30 @@ namespace Templater.Core
             }
         }
 
+        private void RunCommand(string directory, string command)
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                var cmdStart = $"/C cd \"{actualDirectory}\"";
+                var cmd = Process.Start(Constants.CommandPrompt, $"{cmdStart} & {options.Template.Settings.Commands[i]}");
+                cmd.WaitForExit();
+            }
+            else if (OperatingSystem.IsMacOS())
+            {
+                // TODO
+                throw new NotImplementedException("Command execution not supported on this OS!");
+            }
+            else if (OperatingSystem.IsLinux())
+            {
+                // TODO
+                throw new NotImplementedException("Command execution not supported on this OS!");
+            }
+            else
+            {
+                throw new NotImplementedException("Command execution not supported on this OS!");
+            }
+        }
+
         /// <summary>
         /// Updates the files.
         /// </summary>
@@ -450,16 +477,14 @@ namespace Templater.Core
                 if (Directory.Exists(entry))
                 {
                     var path = entry;
-                    if (entry != newEntryPath)
+                    if (entry != newEntryPath && !options.Template.Settings.RenameOnlyFilesAndDirectories.Contains(Path.GetFileName(entry)))
                     {
                         Directory.Move(entry, newEntryPath);
                         path = newEntryPath;
                     }
 
-                    if (!options.Template.Settings.RenameOnlyFilesAndDirectories.Contains(Path.GetFileName(entry)))
-                    {
-                        UpdateFiles(path, options);
-                    }
+                    // update inner files...
+                    UpdateFiles(path, options);
                 }
                 // update files as needed
                 else
