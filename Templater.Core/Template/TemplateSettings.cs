@@ -53,6 +53,16 @@
         public List<string> Commands = new();
 
         /// <summary>
+        /// The commands to run after a new solution using this template has been created
+        /// </summary>
+        public List<string> CommandsMac = new();
+
+        /// <summary>
+        /// The commands to run after a new solution using this template has been created
+        /// </summary>
+        public List<string> CommandsLinux = new();
+
+        /// <summary>
         /// Manual instructions to display after a new solution using this template has been created
         /// </summary>
         public List<string> Instructions = new();

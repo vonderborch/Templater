@@ -203,7 +203,10 @@ namespace Templater.Options
                 }
 
                 template.Settings.Instructions = ConsoleHelpers.GetInput("Instructions (semi-colan-separated)", string.Join(";", template.Settings.Instructions) ?? string.Empty).Split(";").ToList();
-                template.Settings.Commands = ConsoleHelpers.GetInput("Commands (semi-colan-separated)", string.Join(";", template.Settings.Commands) ?? string.Empty).Split(";").ToList();
+                template.Settings.Commands = ConsoleHelpers.GetInput("Windows Commands (semi-colan-separated)", string.Join(";", template.Settings.Commands) ?? string.Empty).Split(";").ToList();
+                template.Settings.CommandsMac = ConsoleHelpers.GetInput("macOS Commands (semi-colan-separated)", string.Join(";", template.Settings.CommandsMac) ?? string.Empty).Split(";").ToList();
+                template.Settings.CommandsLinux = ConsoleHelpers.GetInput("Linux Commands (semi-colan-separated)", string.Join(";", template.Settings.CommandsLinux) ?? string.Empty).Split(";").ToList();
+
                 template.Settings.CleanupFilesAndDirectories = ConsoleHelpers.GetInput("Cleanup Files and Directories (comma-separated)", string.Join(",", template.Settings.CleanupFilesAndDirectories) ?? string.Empty).Split(",").ToList();
                 template.Settings.DirectoriesExcludedInPrepare = ConsoleHelpers.GetInput("Prepare-excluded Directories (comma-separated)", string.Join(",", template.Settings.DirectoriesExcludedInPrepare) ?? string.Empty).Split(",").ToList();
 

@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using Octokit;
 using System.Diagnostics;
 using System.Text;
+using CrossCommands;
 using Templater.Core.Implementations.dotsln;
 using Templater.Core.Repositories;
 using FileMode = System.IO.FileMode;
@@ -279,24 +280,50 @@ namespace Templater.Core
                 log("Running commands...");
                 var cmdStart = $"/C cd \"{actualDirectory}\"";
                 var i = 0;
-                try
+                var osId = OperatingSystem.IsWindows() ? 1 : OperatingSystem.IsMacOS() ? 2 : OperatingSystem.IsLinux() ? 3 : 4;
+                if (osId != 4)
                 {
-                    for (i = 0; i < options.Template.Settings.Commands.Count; i++)
+                    var commandSet = new List<string>();
+                    switch (osId)
                     {
-                        log($"  Running command {i + 1}/{options.Template.Settings.Commands.Count}...");
-                        commandLog("Executing command {i + 1}/{.Template.Settings.Commands.Count}: {options.Template.Settings.Commands[i]}");
-                        RunCommand(actualDirectory, options.Template.Settings.Commands[i]);
+                        case 1:
+                            commandSet = options.Template.Settings.Commands;
+                            break;
+                        case 2:
+                            commandSet = options.Template.Settings.CommandsMac;
+                            break;
+                        case 3:
+                            commandSet = options.Template.Settings.CommandsLinux;
+                            break;
                     }
-                    log("  All commands completed!");
+                    try
+                    {
+                        for (i = 0; i < options.Template.Settings.Commands.Count; i++)
+                        {
+                            log($"  Running command {i + 1}/{commandSet.Count}...");
+                            commandLog($"Executing command {i + 1}/{commandSet.Count}: {commandSet[i]}");
+                            Cross.Commands.RunCommand(actualDirectory, commandSet[i]);
+                        }
+                        log("  All commands completed!");
+                    }
+                    catch (Exception ex)
+                    {
+                        log($"  Failed running command {i + 1}, skipping remaining commands. Please execute the below when manually:");
+                        if (log != instructionLog)
+                        {
+                            instructionLog($"Failed running command {i + 1}, skipping remaining commands. Please execute the below when manually:");
+                        }
+                        for (_ = i; i < commandSet.Count; i++)
+                        {
+                            log($"    {cmdStart} & {commandSet[i]}");
+                            instructionLog($"  {cmdStart} & {commandSet[i]}");
+                        }
+                    }
                 }
-                catch (Exception ex)
+                else
                 {
-                    log($"  Failed running command {i + 1}, skipping remaining commands. Please execute the below when manually:");
-                    if (log != instructionLog)
-                    {
-                        instructionLog($"Failed running command {i + 1}, skipping remaining commands. Please execute the below when manually:");
-                    }
-                    for (_ = i; i < options.Template.Settings.Commands.Count; i++)
+                    log("  Unsupported OS for executing commands, please run commands manually");
+                    for (var i = 0; i < options.Template.Settings.Commands.Count; i++)
                     {
                         log($"    {cmdStart} & {options.Template.Settings.Commands[i]}");
                         instructionLog($"  {cmdStart} & {options.Template.Settings.Commands[i]}");
@@ -434,8 +461,8 @@ namespace Templater.Core
         {
             if (OperatingSystem.IsWindows())
             {
-                var cmdStart = $"/C cd \"{actualDirectory}\"";
-                var cmd = Process.Start(Constants.CommandPrompt, $"{cmdStart} & {options.Template.Settings.Commands[i]}");
+                var cmdStart = $"/C cd \"{directory}\"";
+                var cmd = Process.Start(Constants.CommandPrompt, $"{cmdStart} & {command}");
                 cmd.WaitForExit();
             }
             else if (OperatingSystem.IsMacOS())

@@ -74,7 +74,7 @@ namespace Templater
                args = new string[] { "--help" };
              *        Gets help!
             */
-            args = new string[] { "generate", "-f", "-n", "TEST_DUAL_SUPPORT", "-t", "Velentr.DUAL_SUPPORT", "-o", @"/Users/christianwebber/Templater/tmp/TEST_DUAL_SUPPORT" };
+            args = new string[] { "generate", "-f", "-n", "CrossCommands", "-t", "Velentr.BASE", "-o", @"/Users/christianwebber/Dropbox/Projects/CrossCommands" };
 
             // Ask for configuration if it doesn't exist
             if (!Core.Templater.Instance.ValidateConfiguration())
