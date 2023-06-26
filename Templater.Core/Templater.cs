@@ -503,15 +503,19 @@ namespace Templater.Core
                 // Update directory naming
                 if (Directory.Exists(entry))
                 {
+
                     var path = entry;
-                    if (entry != newEntryPath && !options.Template.Settings.RenameOnlyFilesAndDirectories.Contains(Path.GetFileName(entry)))
+                    if (entry != newEntryPath)
                     {
                         Directory.Move(entry, newEntryPath);
                         path = newEntryPath;
                     }
 
-                    // update inner files...
-                    UpdateFiles(path, options);
+                    // update inner files if and only if we should
+                    if (!options.Template.Settings.RenameOnlyFilesAndDirectories.Contains(Path.GetFileName(path)))
+                    {
+                        UpdateFiles(path, options);
+                    }
                 }
                 // update files as needed
                 else

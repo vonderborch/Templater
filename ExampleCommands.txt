@@ -67,6 +67,6 @@ args = new string[] { "--help" };
 //args = new string[] { "generate", "-n", "test", "-t", "Velentr.DUAL_SUPPORT", "-o", @"C:\Users\ricky\Dropbox\Projects\temp", "-c", @"C:\Users\ricky\OneDrive\Computer\Documents\Templater\SolutionConfigBackups\test_20230626100132.json" };
 
 
-
+C:\Users\ricky\OneDrive\Computer\Documents\Templater\templater.console\
 
 
