@@ -3,6 +3,10 @@ Wanting to make a template from a project but frustrated at Visual Studio for ma
 
 This is my [second attempt](https://github.com/vonderborch/SolutionCreator) at this and has been rewritten from the ground up to have much less sphagetti code everywhere.
 
+# Default Templates Repo
+
+The default repo storing templates is: https://github.com/vonderborch/Templater-Templates
+
 # Download
 The latest release is available on the releases page: https://github.com/vonderborch/Templater/releases/latest
 
