@@ -323,7 +323,7 @@ namespace Templater.Core
                 else
                 {
                     log("  Unsupported OS for executing commands, please run commands manually");
-                    for (var i = 0; i < options.Template.Settings.Commands.Count; i++)
+                    for (i = 0; i < options.Template.Settings.Commands.Count; i++)
                     {
                         log($"    {cmdStart} & {options.Template.Settings.Commands[i]}");
                         instructionLog($"  {cmdStart} & {options.Template.Settings.Commands[i]}");

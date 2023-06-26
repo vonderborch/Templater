@@ -18,6 +18,8 @@ namespace Templater
              *
              *
              * Example args:
+             * args = new string[] { "generate", "-f", "-n", "CrossCommands", "-t", "Velentr.BASE", "-o", @"/Users/christianwebber/Dropbox/Projects/CrossCommands" }
+             * 
                args = new string[] { "generate", "-n", "TEST_BASE", "-t", "Velentr.BASE", "-o", @"C:\Users\ricky\OneDrive\Computer\Documents\Templater\tmp" };
              *        Prepares the specified template solution
              *
@@ -74,7 +76,7 @@ namespace Templater
                args = new string[] { "--help" };
              *        Gets help!
             */
-            args = new string[] { "generate", "-f", "-n", "CrossCommands", "-t", "Velentr.BASE", "-o", @"/Users/christianwebber/Dropbox/Projects/CrossCommands" };
+            //args = new string[] { "generate", "-n", "test", "-t", "Velentr.DUAL_SUPPORT", "-o", @"C:\Users\ricky\Dropbox\Projects\temp", "-c", @"C:\Users\ricky\OneDrive\Computer\Documents\Templater\SolutionConfigBackups\test_20230626100132.json" };
 
             // Ask for configuration if it doesn't exist
             if (!Core.Templater.Instance.ValidateConfiguration())
@@ -99,7 +101,7 @@ namespace Templater
                 (ReportIssue opts) => new ReportIssue().Execute(opts),
                 (UpdateTemplates opts) => new UpdateTemplates().Execute(opts),
                 _ => MakeError()
-                                  );
+            );
         }
 
         /// <summary>
