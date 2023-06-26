@@ -15,9 +15,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionFiles", "SolutionFi
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TemplaterApp", "TemplaterApp\TemplaterApp.csproj", "{069EB87B-5324-4CDC-9A53-CCEF3E77DDED}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TemplaterApp.Desktop", "TemplaterApp.Desktop\TemplaterApp.Desktop.csproj", "{D9BE5723-7FEA-41F1-BF42-1DCBEB51D7EF}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{402ABA17-207A-4811-B52D-812B5B0F4FAD}"
+	ProjectSection(SolutionItems) = preProject
+		ExampleCommands.txt = ExampleCommands.txt
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,14 +34,6 @@ Global
 		{5CCEAFCB-A901-44BA-A887-EE714D7308DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5CCEAFCB-A901-44BA-A887-EE714D7308DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5CCEAFCB-A901-44BA-A887-EE714D7308DE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{069EB87B-5324-4CDC-9A53-CCEF3E77DDED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{069EB87B-5324-4CDC-9A53-CCEF3E77DDED}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{069EB87B-5324-4CDC-9A53-CCEF3E77DDED}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{069EB87B-5324-4CDC-9A53-CCEF3E77DDED}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D9BE5723-7FEA-41F1-BF42-1DCBEB51D7EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D9BE5723-7FEA-41F1-BF42-1DCBEB51D7EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D9BE5723-7FEA-41F1-BF42-1DCBEB51D7EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D9BE5723-7FEA-41F1-BF42-1DCBEB51D7EF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
