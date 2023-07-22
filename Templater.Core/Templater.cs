@@ -457,30 +457,6 @@ namespace Templater.Core
             }
         }
 
-        private void RunCommand(string directory, string command)
-        {
-            if (OperatingSystem.IsWindows())
-            {
-                var cmdStart = $"/C cd \"{directory}\"";
-                var cmd = Process.Start(Constants.CommandPrompt, $"{cmdStart} & {command}");
-                cmd.WaitForExit();
-            }
-            else if (OperatingSystem.IsMacOS())
-            {
-                // TODO
-                throw new NotImplementedException("Command execution not supported on this OS!");
-            }
-            else if (OperatingSystem.IsLinux())
-            {
-                // TODO
-                throw new NotImplementedException("Command execution not supported on this OS!");
-            }
-            else
-            {
-                throw new NotImplementedException("Command execution not supported on this OS!");
-            }
-        }
-
         /// <summary>
         /// Updates the files.
         /// </summary>

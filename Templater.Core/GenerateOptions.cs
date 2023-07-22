@@ -77,6 +77,10 @@ namespace Templater.Core
              * 4 = License
              * 5 = Version
              */
+            if (_replacementText.Count == 0)
+            {
+                _ = ReplacementsAndGuids;
+            }
             _replacementText.Add(Constants.REGEX_TAGS[0], SolutionSettings.Author);
             _replacementText.Add(Constants.REGEX_TAGS[1], SolutionSettings.Company);
             _replacementText.Add(Constants.REGEX_TAGS[2], string.Join(",", SolutionSettings.Tags));

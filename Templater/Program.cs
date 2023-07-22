@@ -11,6 +11,9 @@ namespace Templater
         /// <param name="args">The arguments.</param>
         private static void Main(string[] args)
         {
+            //var cmd = @"generate -f -n Velentr.Core -t Velentr.DUAL_SUPPORT_WITH_GENERIC -c \\Mac\Home\Documents\Templater\SolutionConfigBackups\Velentr.Core.json  -o \\Mac\Dropbox\Projects\Velentr";
+            //args = cmd.Split(" ");
+
             // Ask for configuration if it doesn't exist
             if (!Core.Templater.Instance.ValidateConfiguration())
             {
